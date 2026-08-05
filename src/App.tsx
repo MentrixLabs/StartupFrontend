@@ -1,0 +1,131 @@
+// src/App.tsx
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
+
+// Макеты
+import AuthLayout from '@/layouts/AuthLayout';
+import MainLayout from '@/layouts/MainLayout';
+
+// Страницы Landing (публичные)
+import HomePage from '@/pages/Landing/HomePage';
+import FeaturesPage from '@/pages/Landing/FeaturesPage';
+import PricingPage from '@/pages/Landing/PricingPage';
+
+// Страницы аутентификации (используют AuthLayout)
+import LoginPage from '@/pages/Auth/LoginPage';        // предположим, что они существуют
+import RegisterPage from '@/pages/Auth/RegisterPage';  // предположим, что они существуют
+
+// Страницы Dashboard (приватные, используют MainLayout)
+import DashboardPage from '@/pages/Dashboard/DashboardPage';
+import GoodsListPage from '@/pages/Dashboard/GoodsListPage';
+import GoodsDetailPage from '@/pages/Dashboard/GoodsDetailPage';
+import SeoGenerationPage from '@/pages/Dashboard/SeoGenerationPage';
+import InfographicsPage from '@/pages/Dashboard/InfographicsPage';
+import ReportsPage from '@/pages/Dashboard/ReportsPage';
+import ProfilePage from '@/pages/Dashboard/ProfilePage';
+import SettingsPage from '@/pages/Dashboard/SettingsPage';
+
+// Компонент для защищённых маршрутов
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 dark:text-gray-400">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const App: React.FC = () => {
+  const { loadUser, isLoading } = useAuthStore();
+
+  // Загружаем пользователя при старте приложения
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
+  // Если ещё загружается пользователь, показываем спиннер (глобально)
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 dark:text-gray-400">Загрузка приложения...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Публичные страницы (лендинг) – без макета (они сами содержат header/footer) */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+
+        {/* Страницы аутентификации – с макетом AuthLayout */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          {/* Можно добавить восстановление пароля */}
+          {/* <Route path="/forgot-password" element={<ForgotPasswordPage />} /> */}
+        </Route>
+
+        {/* Защищённые маршруты – с макетом MainLayout */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/goods" element={<GoodsListPage />} />
+          <Route path="/goods/new" element={<GoodsDetailPage />} /> {/* или отдельная страница создания */}
+          <Route path="/goods/:id" element={<GoodsDetailPage />} />
+          <Route path="/goods/:id/edit" element={<GoodsDetailPage />} />
+          <Route path="/seo" element={<SeoGenerationPage />} />
+          <Route path="/infographics" element={<InfographicsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+
+          {/* Перенаправление с корня после входа на дашборд */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+
+        {/* Страница 404 */}
+        <Route
+          path="*"
+          element={
+            <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+              <h1 className="text-6xl font-bold text-gray-800 dark:text-white">404</h1>
+              <p className="text-xl text-gray-600 dark:text-gray-400 mt-4">Страница не найдена</p>
+              <a
+                href="/"
+                className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Вернуться на главную
+              </a>
+            </div>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
+export default App;
