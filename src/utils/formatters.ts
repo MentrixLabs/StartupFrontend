@@ -94,7 +94,7 @@ export const formatRelativeTime = (date: string | Date, locale: string = 'ru-RU'
   const diffMonth = Math.floor(diffDay / 30);
   const diffYear = Math.floor(diffDay / 365);
 
-  const rtf = new Intl.RelativeTimeFormatter(locale, { numeric: 'auto' });
+ const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
 
   if (diffSec < 60) {
     return 'только что';

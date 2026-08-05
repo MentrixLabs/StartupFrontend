@@ -1,6 +1,6 @@
 {
   "name": "proskladai-frontend",
-  "homepage": "https://Egor4444ik.github.io/skladai",
+  "homepage": "https://MentrixLabs.github.io/StartupFrontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.24",
@@ -35,6 +37,7 @@
     "eslint": "^8.54.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
+    "gh-pages": "^6.3.0",
     "postcss": "^8.5.25",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.3.0",

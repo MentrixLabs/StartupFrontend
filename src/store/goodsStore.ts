@@ -32,7 +32,7 @@ interface GoodsState {
   clearError: () => void;
 }
 
-export const useGoodsStore = create<GoodsState>((set, get) => ({
+export const useGoodsStore = create<GoodsState>((set) => ({
   goods: [],
   isLoading: false,
   error: null,
