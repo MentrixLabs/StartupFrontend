@@ -30,26 +30,25 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       isAuthenticated: false,
 
-      login: async (email, password) => {
+      login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          // В api/login уже используется username, но мы передаём email как username
-          // Если хотите использовать email как логин, адаптируйте
-          const user = await apiLogin({ username: email, password });
-          set({
+            await apiLogin({ username, password });
+            const user = await getCurrentUser(); // загружаем профиль по токену
+            set({
             user,
             isLoading: false,
             error: null,
             isAuthenticated: true,
-          });
+            });
         } catch (error: any) {
-          const detail = error.response?.data?.detail || error.message || 'Ошибка входа';
-          set({
+            const detail = error.response?.data?.detail || error.message || 'Ошибка входа';
+            set({
             isLoading: false,
             error: typeof detail === 'string' ? detail : JSON.stringify(detail),
             isAuthenticated: false,
-          });
-          throw error;
+            });
+            throw error;
         }
       },
 
