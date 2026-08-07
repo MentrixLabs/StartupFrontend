@@ -29,12 +29,14 @@ const GoodsListPage: React.FC = () => {
   } = useGoods();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(page);
+  const [currentPage, setCurrentPage] = useState<number>(page || 1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Фильтрация товаров по поисковому запросу (локальная)
   const filteredGoods = useMemo(() => {
+    // Если goods === undefined или null, возвращаем пустой массив
+    if (!goods) return [];
     if (!searchQuery.trim()) return goods;
     const query = searchQuery.toLowerCase().trim();
     return goods.filter(
@@ -64,7 +66,7 @@ const GoodsListPage: React.FC = () => {
         await removeGoods(id);
         setDeleteConfirm(null);
         // Если после удаления на странице нет товаров и это не первая страница, переходим на предыдущую
-        if (goods.length === 1 && currentPage > 1) {
+        if (goods && goods.length === 1 && currentPage > 1) {
           handlePageChange(currentPage - 1);
         }
       } catch (err) {
@@ -73,7 +75,7 @@ const GoodsListPage: React.FC = () => {
         setIsDeleting(false);
       }
     },
-    [removeGoods, goods.length, currentPage, handlePageChange, isDeleting]
+    [removeGoods, goods, currentPage, handlePageChange, isDeleting]
   );
 
   // Форматирование даты
@@ -87,7 +89,7 @@ const GoodsListPage: React.FC = () => {
   };
 
   // Состояние загрузки
-  if (loading && goods.length === 0) {
+  if (loading && (!goods || goods.length === 0)) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center gap-4">
@@ -99,7 +101,7 @@ const GoodsListPage: React.FC = () => {
   }
 
   // Ошибка
-  if (error && goods.length === 0) {
+  if (error && (!goods || goods.length === 0)) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -149,7 +151,7 @@ const GoodsListPage: React.FC = () => {
           />
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          Всего: <span className="font-medium">{total}</span> товаров
+          Всего: <span className="font-medium">{total || 0}</span> товаров
           {searchQuery && (
             <span className="ml-1">
               (найдено: <span className="font-medium">{filteredGoods.length}</span>)
@@ -160,7 +162,7 @@ const GoodsListPage: React.FC = () => {
 
       {/* Таблица товаров */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {filteredGoods.length === 0 ? (
+        {!filteredGoods || filteredGoods.length === 0 ? (
           <div className="py-16 text-center">
             <Package size={48} className="text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p className="text-gray-600 dark:text-gray-400">
