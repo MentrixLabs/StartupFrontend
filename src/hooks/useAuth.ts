@@ -12,8 +12,8 @@ interface UseAuthReturn {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName?: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => void;
   isAuth: boolean;
 }
@@ -23,7 +23,6 @@ export const useAuth = (): UseAuthReturn => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Функция для загрузки текущего пользователя (при монтировании и после входа)
   const fetchUser = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -37,25 +36,22 @@ export const useAuth = (): UseAuthReturn => {
     } catch (err: any) {
       setError(err.message || 'Ошибка загрузки пользователя');
       setUser(null);
-      // Если токен невалиден, удаляем его
       localStorage.removeItem('access_token');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // При монтировании проверяем аутентификацию
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
 
-  // Вход
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (username: string, password: string) => {
       setLoading(true);
       setError(null);
       try {
-        const userData = await apiLogin({ email, password });
+        const userData = await apiLogin({ username, password });
         setUser(userData);
       } catch (err: any) {
         setError(err.response?.data?.detail || err.message || 'Ошибка входа');
@@ -67,13 +63,12 @@ export const useAuth = (): UseAuthReturn => {
     [],
   );
 
-  // Регистрация
   const register = useCallback(
-    async (email: string, password: string, fullName?: string) => {
+    async (username: string, email: string, password: string, fullName?: string) => {
       setLoading(true);
       setError(null);
       try {
-        const userData = await apiRegister({ email, password, full_name: fullName });
+        const userData = await apiRegister({ username, email, password, full_name: fullName });
         setUser(userData);
       } catch (err: any) {
         setError(err.response?.data?.detail || err.message || 'Ошибка регистрации');
@@ -85,7 +80,6 @@ export const useAuth = (): UseAuthReturn => {
     [],
   );
 
-  // Выход
   const logout = useCallback(() => {
     apiLogout();
     setUser(null);

@@ -15,15 +15,12 @@ export interface User {
   created_at: string;
 }
 
-// Данные товара (карточка)
+// Данные товара (карточка) – соответствует новой схеме
 export interface GoodsItem {
   id: string;
-  name: string;
+  name: string;          // соответствует cardname в БД
   description?: string;
-  article?: string;
-  price?: number;
-  category?: string;
-  // Дополнительные поля по необходимости
+  url: string;           // обязательно
   created_at: string;
   updated_at?: string;
 }

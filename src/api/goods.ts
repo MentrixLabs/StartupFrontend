@@ -1,19 +1,18 @@
 import client from './client';
 import { GoodsItem, PaginatedResponse } from './types';
 
-// Создание товара
 interface CreateGoodsData {
   name: string;
   description?: string;
-  article?: string;
-  price?: number;
-  category?: string;
+  url: string;           // обязательно
 }
 
-// Обновление товара
-interface UpdateGoodsData extends Partial<CreateGoodsData> {}
+interface UpdateGoodsData {
+  name?: string;
+  description?: string;
+  url?: string;
+}
 
-// Получить список товаров (с пагинацией)
 export const getGoodsList = async (
   page: number = 1,
   size: number = 20,
@@ -24,19 +23,16 @@ export const getGoodsList = async (
   return response.data;
 };
 
-// Получить один товар по ID
 export const getGoodsById = async (id: string): Promise<GoodsItem> => {
   const response = await client.get<GoodsItem>(`/goods/${id}`);
   return response.data;
 };
 
-// Создать новый товар
 export const createGoods = async (data: CreateGoodsData): Promise<GoodsItem> => {
   const response = await client.post<GoodsItem>('/goods', data);
   return response.data;
 };
 
-// Обновить товар
 export const updateGoods = async (
   id: string,
   data: UpdateGoodsData,
@@ -45,13 +41,8 @@ export const updateGoods = async (
   return response.data;
 };
 
-// Удалить товар
 export const deleteGoods = async (id: string): Promise<void> => {
   await client.delete(`/goods/${id}`);
 };
 
-// Загрузка данных о товаре из парсинга (например, по артикулу)
-export const parseGoodsByArticle = async (article: string): Promise<GoodsItem> => {
-  const response = await client.post<GoodsItem>('/goods/parse', { article });
-  return response.data;
-};
+// Удаляем parseGoodsByArticle, если он не нужен, или адаптируем под новую структуру

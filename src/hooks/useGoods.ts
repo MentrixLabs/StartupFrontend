@@ -5,7 +5,7 @@ import {
   createGoods,
   updateGoods,
   deleteGoods,
-  parseGoodsByArticle,
+  // parseGoodsByArticle, // удалено
 } from '@/api/goods';
 import type { GoodsItem, PaginatedResponse } from '@/api/types';
 
@@ -22,7 +22,7 @@ interface UseGoodsReturn {
   addGoods: (data: Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>) => Promise<GoodsItem>;
   updateGoods: (id: string, data: Partial<Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>>) => Promise<GoodsItem>;
   removeGoods: (id: string) => Promise<void>;
-  parseByArticle: (article: string) => Promise<GoodsItem>;
+  // parseByArticle: (article: string) => Promise<GoodsItem>; // удалено
 }
 
 export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
@@ -36,7 +36,6 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     pages: 0,
   });
 
-  // Загрузка списка товаров
   const fetchGoods = useCallback(
     async (page: number = initialPage, size: number = initialSize) => {
       setLoading(true);
@@ -60,13 +59,10 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [initialPage, initialSize],
   );
 
-  // При монтировании загружаем первую страницу
   useEffect(() => {
     fetchGoods(initialPage, initialSize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Получение одного товара
   const getGoods = useCallback(async (id: string): Promise<GoodsItem> => {
     setLoading(true);
     setError(null);
@@ -81,14 +77,12 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     }
   }, []);
 
-  // Добавление товара (обновляет список)
   const addGoods = useCallback(
     async (data: Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>): Promise<GoodsItem> => {
       setLoading(true);
       setError(null);
       try {
         const newItem = await createGoods(data);
-        // Обновляем список (добавляем в начало)
         setGoods((prev) => [newItem, ...prev]);
         setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
         return newItem;
@@ -102,14 +96,12 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [],
   );
 
-  // Обновление товара
   const updateGoodsItem = useCallback(
     async (id: string, data: Partial<Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>>): Promise<GoodsItem> => {
       setLoading(true);
       setError(null);
       try {
         const updated = await updateGoods(id, data);
-        // Обновляем элемент в списке
         setGoods((prev) => prev.map((item) => (item.id === id ? updated : item)));
         return updated;
       } catch (err: any) {
@@ -122,14 +114,12 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [],
   );
 
-  // Удаление товара
   const removeGoods = useCallback(
     async (id: string): Promise<void> => {
       setLoading(true);
       setError(null);
       try {
         await deleteGoods(id);
-        // Убираем из списка
         setGoods((prev) => prev.filter((item) => item.id !== id));
         setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
       } catch (err: any) {
@@ -142,26 +132,7 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [],
   );
 
-  // Парсинг товара по артикулу (добавляет в список)
-  const parseByArticle = useCallback(
-    async (article: string): Promise<GoodsItem> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const parsed = await parseGoodsByArticle(article);
-        // Добавляем в список
-        setGoods((prev) => [parsed, ...prev]);
-        setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
-        return parsed;
-      } catch (err: any) {
-        setError(err.message || 'Ошибка парсинга товара');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+  // parseByArticle удалён
 
   return {
     goods,
@@ -176,6 +147,6 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     addGoods,
     updateGoods: updateGoodsItem,
     removeGoods,
-    parseByArticle,
+    // parseByArticle, // удалён
   };
 };

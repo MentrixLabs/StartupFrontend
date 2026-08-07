@@ -52,27 +52,14 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (email, password, fullName) => {
+      register: async (username: string, email: string, password: string, fullName?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const user = await apiRegister({
-            email,
-            password,
-            full_name: fullName,
-          });
-          set({
-            user,
-            isLoading: false,
-            error: null,
-            isAuthenticated: true,
-          });
+            const user = await apiRegister({ username, email, password, full_name: fullName });
+            set({ user, isLoading: false, error: null, isAuthenticated: true });
         } catch (error: any) {
-          set({
-            isLoading: false,
-            error: error.message || 'Ошибка регистрации',
-            isAuthenticated: false,
-          });
-          throw error;
+            set({ isLoading: false, error: error.message || 'Ошибка регистрации' });
+            throw error;
         }
       },
 

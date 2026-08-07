@@ -6,6 +6,8 @@ import { Loader2 } from 'lucide-react';
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { register, isLoading, error, clearError } = useAuthStore();
+
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -14,14 +16,17 @@ const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+
     if (password !== confirmPassword) {
-      // можно добавить локальную ошибку
+      alert('Пароли не совпадают');
       return;
     }
+
     try {
-      await register(email, password, fullName);
+      // Важно: порядок аргументов соответствует useAuthStore.register
+      await register(username, email, password, fullName);
       navigate('/dashboard');
-    } catch {
+    } catch (err) {
       // ошибка уже в сторе
     }
   };
@@ -31,7 +36,22 @@ const RegisterPage: React.FC = () => {
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Регистрация</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Имя</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Имя пользователя <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="mt-1 w-full"
+            placeholder="username"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Полное имя (опционально)
+          </label>
           <input
             type="text"
             value={fullName}
@@ -41,28 +61,36 @@ const RegisterPage: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Email <span className="text-red-500">*</span>
+          </label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 w-full"
+            placeholder="example@mail.ru"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Пароль</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Пароль <span className="text-red-500">*</span>
+          </label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="mt-1 w-full"
+            placeholder="минимум 6 символов"
             required
             minLength={6}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Подтверждение пароля</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Подтверждение пароля <span className="text-red-500">*</span>
+          </label>
           <input
             type="password"
             value={confirmPassword}

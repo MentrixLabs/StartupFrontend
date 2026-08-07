@@ -8,28 +8,38 @@ interface AuthResponse {
   user: User;
 }
 
-// Параметры регистрации
+// Параметры регистрации (отправляются как JSON)
 interface RegisterData {
+  username: string;
   email: string;
   password: string;
   full_name?: string;
 }
 
-// Параметры логина
+// Параметры логина (отправляются как x-www-form-urlencoded)
 interface LoginData {
-  email: string;
+  username: string;   // вместо email – бэкенд ожидает username
   password: string;
 }
 
-// Логин – сохраняет токен и возвращает данные пользователя
+// Логин – отправляет form-urlencoded
 export const login = async (data: LoginData): Promise<User> => {
-  const response = await client.post<AuthResponse>('/auth/login', data);
+  const formData = new URLSearchParams();
+  formData.append('username', data.username);
+  formData.append('password', data.password);
+
+  const response = await client.post<AuthResponse>('/auth/login', formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+
   const { access_token, user } = response.data;
   localStorage.setItem('access_token', access_token);
   return user;
 };
 
-// Регистрация – аналогично
+// Регистрация – отправляет JSON (как раньше)
 export const register = async (data: RegisterData): Promise<User> => {
   const response = await client.post<AuthResponse>('/auth/register', data);
   const { access_token, user } = response.data;
@@ -40,7 +50,6 @@ export const register = async (data: RegisterData): Promise<User> => {
 // Выход – удаляем токен
 export const logout = (): void => {
   localStorage.removeItem('access_token');
-  // Можно также сделать запрос на /auth/logout, если требуется
 };
 
 // Получение текущего пользователя (по токену)
