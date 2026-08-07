@@ -6,14 +6,14 @@ import { Loader2 } from 'lucide-react';
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading, error, clearError } = useAuthStore();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     try {
-      await login(email, password);
+      await login(username, password);
       navigate('/dashboard');
     } catch {
       // ошибка уже в сторе
@@ -25,12 +25,13 @@ const LoginPage: React.FC = () => {
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Вход в аккаунт</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Имя пользователя</label>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="mt-1 w-full"
+            placeholder="Введите имя пользователя"
             required
           />
         </div>
