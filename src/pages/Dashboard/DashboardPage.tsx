@@ -10,8 +10,6 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
-  Clock,
-  TrendingUp,
 } from 'lucide-react';
 import {
   BarChart,
@@ -27,17 +25,7 @@ import {
   Legend,
 } from 'recharts';
 
-// Тип для статистики
-interface DashboardStats {
-  totalGoods: number;
-  totalSeo: number;
-  totalInfographics: number;
-  totalReports: number;
-  seoGrowth: number; // процент роста
-  infographicsGrowth: number;
-}
-
-// Заглушка для данных графика (активность за неделю)
+// Данные для графиков (заглушки)
 const weeklyActivity = [
   { day: 'Пн', seo: 4, infographics: 3 },
   { day: 'Вт', seo: 7, infographics: 5 },
@@ -48,7 +36,6 @@ const weeklyActivity = [
   { day: 'Вс', seo: 2, infographics: 1 },
 ];
 
-// Данные для круговой диаграммы (типы контента)
 const contentDistribution = [
   { name: 'SEO-тексты', value: 45 },
   { name: 'Инфографика', value: 30 },
@@ -59,39 +46,30 @@ const COLORS = ['#3b82f6', '#8b5cf6', '#10b981'];
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { goods, loading: goodsLoading, fetchGoods } = useGoods();
-  const [stats, setStats] = useState<DashboardStats>({
+  const [loading, setLoading] = useState<boolean>(true);
+  const [recentGoods, setRecentGoods] = useState<any[]>([]);
+  const [stats, setStats] = useState({
     totalGoods: 0,
-    totalSeo: 0,
-    totalInfographics: 0,
-    totalReports: 0,
+    totalSeo: 124,
+    totalInfographics: 89,
+    totalReports: 34,
     seoGrowth: 12,
     infographicsGrowth: 8,
   });
-  const [loading, setLoading] = useState<boolean>(true);
-  const [recentGoods, setRecentGoods] = useState<any[]>([]);
 
   // Загрузка данных
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        // Получаем список товаров
-        await fetchGoods(1, 10); // последние 10
-        // Здесь можно было бы вызвать API для статистики, но пока заглушка
-        // Имитация загрузки статистики
-        setTimeout(() => {
-          setStats({
-            totalGoods: 47,
-            totalSeo: 124,
-            totalInfographics: 89,
-            totalReports: 34,
-            seoGrowth: 12,
-            infographicsGrowth: 8,
-          });
-          setLoading(false);
-        }, 500);
+        await fetchGoods(1, 10);
+        setStats((prev) => ({
+          ...prev,
+          totalGoods: goods?.length || 0,
+        }));
       } catch (error) {
         console.error('Error loading dashboard data:', error);
+      } finally {
         setLoading(false);
       }
     };
@@ -99,21 +77,20 @@ const DashboardPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Когда товары загружены, обновляем последние
+  // Обновляем последние товары
   useEffect(() => {
-    if (goods.length > 0) {
-      // Берём первые 5 (или последние добавленные, если есть сортировка)
+    if (goods && goods.length > 0) {
       setRecentGoods(goods.slice(0, 5));
+    } else {
+      setRecentGoods([]);
     }
   }, [goods]);
 
-  // Функция для форматирования даты
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
   };
 
-  // Карточки метрик
   const metricCards = [
     {
       title: 'Всего товаров',
@@ -220,7 +197,6 @@ const DashboardPage: React.FC = () => {
 
       {/* Графики */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Столбчатая диаграмма */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -258,7 +234,6 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Круговая диаграмма */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Распределение контента
@@ -294,7 +269,7 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Последние товары и действия */}
+      {/* Последние товары и быстрые действия */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Список последних товаров */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
@@ -309,7 +284,7 @@ const DashboardPage: React.FC = () => {
               Все товары →
             </Link>
           </div>
-          {recentGoods.length === 0 ? (
+          {!recentGoods || recentGoods.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">
               Нет добавленных товаров
             </p>
@@ -326,7 +301,7 @@ const DashboardPage: React.FC = () => {
                         {item.name}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Артикул: {item.article || '—'} • {formatDate(item.created_at)}
+                        {item.created_at && `Добавлен: ${formatDate(item.created_at)}`}
                       </p>
                     </div>
                   </div>
@@ -342,7 +317,7 @@ const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        {/* Последние действия / быстрые ссылки */}
+        {/* Быстрые действия */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Быстрые действия
