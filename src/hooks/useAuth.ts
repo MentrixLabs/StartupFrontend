@@ -47,18 +47,19 @@ export const useAuth = (): UseAuthReturn => {
   }, [fetchUser]);
 
   const login = useCallback(
-    async (username: string, password: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const userData = await apiLogin({ username, password });
+  async (username: string, password: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+        await apiLogin({ username, password });            // сохраняет токен
+        const userData = await getCurrentUser();          // загружаем профиль
         setUser(userData);
-      } catch (err: any) {
+        } catch (err: any) {
         setError(err.response?.data?.detail || err.message || 'Ошибка входа');
         throw err;
-      } finally {
+        } finally {
         setLoading(false);
-      }
+        }
     },
     [],
   );
