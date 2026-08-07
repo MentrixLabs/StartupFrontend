@@ -13,7 +13,6 @@ interface RegisterData {
   username: string;
   email: string;
   password: string;
-  full_name?: string;
 }
 
 // Параметры логина (отправляются как x-www-form-urlencoded)
