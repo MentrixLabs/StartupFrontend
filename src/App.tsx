@@ -25,6 +25,7 @@ import InfographicsPage from '@/pages/Dashboard/InfographicsPage';
 import ReportsPage from '@/pages/Dashboard/ReportsPage';
 import ProfilePage from '@/pages/Dashboard/ProfilePage';
 import SettingsPage from '@/pages/Dashboard/SettingsPage';
+import GoodsCreatePage from '@/pages/Dashboard/GoodsCreatePage';
 
 // Компонент для защищённых маршрутов
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -97,6 +98,7 @@ const App: React.FC = () => {
           <Route path="/goods/new" element={<GoodsDetailPage />} /> {/* или отдельная страница создания */}
           <Route path="/goods/:id" element={<GoodsDetailPage />} />
           <Route path="/goods/:id/edit" element={<GoodsDetailPage />} />
+          <Route path="/goods/new" element={<GoodsCreatePage />} />
           <Route path="/seo" element={<SeoGenerationPage />} />
           <Route path="/infographics" element={<InfographicsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
