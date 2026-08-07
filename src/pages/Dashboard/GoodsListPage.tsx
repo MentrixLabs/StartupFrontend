@@ -33,31 +33,29 @@ const GoodsListPage: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  // Фильтрация товаров по поисковому запросу (локальная)
+  // Фильтрация товаров (безопасная)
   const filteredGoods = useMemo(() => {
-    // Если goods === undefined или null, возвращаем пустой массив
-    if (!goods) return [];
+    // Защита от undefined/null/не-массива
+    if (!goods || !Array.isArray(goods)) return [];
     if (!searchQuery.trim()) return goods;
     const query = searchQuery.toLowerCase().trim();
-    return goods.filter(
-      (item) =>
-        item.name.toLowerCase().includes(query) ||
-        (item.article && item.article.toLowerCase().includes(query)) ||
-        (item.category && item.category.toLowerCase().includes(query))
-    );
+    return goods.filter((item) => {
+      const name = item?.name?.toLowerCase() || '';
+      const article = item?.article?.toLowerCase() || '';
+      const category = item?.category?.toLowerCase() || '';
+      return name.includes(query) || article.includes(query) || category.includes(query);
+    });
   }, [goods, searchQuery]);
 
-  // Обработчик смены страницы
   const handlePageChange = useCallback(
     (newPage: number) => {
-      if (newPage < 1 || newPage > pages) return;
+      if (newPage < 1 || (pages && newPage > pages)) return;
       setCurrentPage(newPage);
       fetchGoods(newPage, size);
     },
     [fetchGoods, pages, size]
   );
 
-  // Удаление товара
   const handleDelete = useCallback(
     async (id: string) => {
       if (isDeleting) return;
@@ -65,8 +63,8 @@ const GoodsListPage: React.FC = () => {
       try {
         await removeGoods(id);
         setDeleteConfirm(null);
-        // Если после удаления на странице нет товаров и это не первая страница, переходим на предыдущую
-        if (goods && goods.length === 1 && currentPage > 1) {
+        const currentGoods = goods || [];
+        if (currentGoods.length === 1 && currentPage > 1) {
           handlePageChange(currentPage - 1);
         }
       } catch (err) {
@@ -78,8 +76,8 @@ const GoodsListPage: React.FC = () => {
     [removeGoods, goods, currentPage, handlePageChange, isDeleting]
   );
 
-  // Форматирование даты
   const formatDate = (dateString: string) => {
+    if (!dateString) return '—';
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
       day: '2-digit',
@@ -162,7 +160,7 @@ const GoodsListPage: React.FC = () => {
 
       {/* Таблица товаров */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {!filteredGoods || filteredGoods.length === 0 ? (
+        {filteredGoods.length === 0 ? (
           <div className="py-16 text-center">
             <Package size={48} className="text-gray-300 dark:text-gray-600 mx-auto mb-3" />
             <p className="text-gray-600 dark:text-gray-400">
@@ -259,7 +257,7 @@ const GoodsListPage: React.FC = () => {
         )}
 
         {/* Пагинация */}
-        {pages > 1 && (
+        {pages && pages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">
               Страница {currentPage} из {pages}
