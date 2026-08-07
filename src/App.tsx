@@ -69,7 +69,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/StartupFrontend">
       <Routes>
         {/* Публичные страницы (лендинг) – без макета (они сами содержат header/footer) */}
         <Route path="/" element={<HomePage />} />
