@@ -9,7 +9,6 @@ const RegisterPage: React.FC = () => {
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -24,7 +23,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       // Важно: порядок аргументов соответствует useAuthStore.register
-      await register(username, email, password, fullName);
+      await register(username, email, password);
       navigate('/dashboard');
     } catch (err) {
       // ошибка уже в сторе
@@ -46,18 +45,6 @@ const RegisterPage: React.FC = () => {
             className="mt-1 w-full"
             placeholder="username"
             required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Полное имя (опционально)
-          </label>
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="mt-1 w-full"
-            placeholder="Иван Иванов"
           />
         </div>
         <div>
