@@ -1,4 +1,3 @@
-// src/store/authStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '@/api/types';
@@ -15,9 +14,8 @@ interface AuthState {
   error: string | null;
   isAuthenticated: boolean;
 
-  // Действия
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName?: string) => Promise<void>;
+  register: (username: string, email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
   clearError: () => void;
@@ -26,7 +24,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isLoading: false,
       error: null,
@@ -35,7 +33,9 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-          const user = await apiLogin({ email, password });
+          // В api/login уже используется username, но мы передаём email как username
+          // Если хотите использовать email как логин, адаптируйте
+          const user = await apiLogin({ username: email, password });
           set({
             user,
             isLoading: false,
@@ -43,23 +43,39 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
           });
         } catch (error: any) {
+          const detail = error.response?.data?.detail || error.message || 'Ошибка входа';
           set({
             isLoading: false,
-            error: error.message || 'Ошибка входа',
+            error: typeof detail === 'string' ? detail : JSON.stringify(detail),
             isAuthenticated: false,
           });
           throw error;
         }
       },
 
-      register: async (username: string, email: string, password: string, fullName?: string) => {
+      register: async (username, email, password, fullName) => {
         set({ isLoading: true, error: null });
         try {
-            const user = await apiRegister({ username, email, password, full_name: fullName });
-            set({ user, isLoading: false, error: null, isAuthenticated: true });
+          const user = await apiRegister({
+            username,
+            email,
+            password,
+            full_name: fullName,
+          });
+          set({
+            user,
+            isLoading: false,
+            error: null,
+            isAuthenticated: true,
+          });
         } catch (error: any) {
-            set({ isLoading: false, error: error.message || 'Ошибка регистрации' });
-            throw error;
+          const detail = error.response?.data?.detail || error.message || 'Ошибка регистрации';
+          set({
+            isLoading: false,
+            error: typeof detail === 'string' ? detail : JSON.stringify(detail),
+            isAuthenticated: false,
+          });
+          throw error;
         }
       },
 
@@ -92,7 +108,6 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
           });
         } catch (error) {
-          // Токен недействителен
           localStorage.removeItem('access_token');
           set({
             user: null,
@@ -104,11 +119,11 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage', // ключ для localStorage
+      name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-      }), // сохраняем только эти поля
+      }),
     }
   )
 );
