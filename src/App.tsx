@@ -95,10 +95,9 @@ const App: React.FC = () => {
         >
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/goods" element={<GoodsListPage />} />
-          <Route path="/goods/new" element={<GoodsDetailPage />} /> {/* или отдельная страница создания */}
+          <Route path="/goods/new" element={<GoodsCreatePage />} />          
           <Route path="/goods/:id" element={<GoodsDetailPage />} />
           <Route path="/goods/:id/edit" element={<GoodsDetailPage />} />
-          <Route path="/goods/new" element={<GoodsCreatePage />} />
           <Route path="/seo" element={<SeoGenerationPage />} />
           <Route path="/infographics" element={<InfographicsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
