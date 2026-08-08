@@ -12,7 +12,7 @@ import {
   saveInfographicsToGoods,
   getGoodsInfographics,
 } from '@/api/infographics';
-import type { SeoGenerationResponse, InfographicsSearchResponse } from '@/api/types';
+import type { SeoGenerationResponse, InfographicsSearchResponse, SeoHistoryResponse, SeoDataResponse } from '@/api/types';
 import {
   ArrowLeft,
   Package,
@@ -48,9 +48,9 @@ const GoodsDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('info');
 
   // Состояние для SEO
-  const [seoHistory, setSeoHistory] = useState<SeoGenerationResponse[]>([]);
+  const [seoHistory, setSeoHistory] = useState<SeoHistoryResponse | null>(null);
+  const [generatedSeo, setGeneratedSeo] = useState<SeoDataResponse | null>(null);
   const [seoLoading, setSeoLoading] = useState<boolean>(false);
-  const [generatedSeo, setGeneratedSeo] = useState<SeoGenerationResponse | null>(null);
   const [seoError, setSeoError] = useState<string | null>(null);
 
   // Состояние для инфографики
@@ -82,13 +82,15 @@ const GoodsDetailPage: React.FC = () => {
       // Загружаем историю SEO
       const history = await getSeoHistory(id);
       setSeoHistory(history);
-      if (history.length > 0) {
-        setGeneratedSeo(history[0]); // последний
+      if (history.generated) {
+        setGeneratedSeo(history.generated);
+      } else {
+        setGeneratedSeo(null);
       }
     } catch (err) {
       console.error('Ошибка загрузки SEO истории:', err);
     }
-
+  
     try {
       // Загружаем сохранённую инфографику
       const images = await getGoodsInfographics(id);
@@ -341,91 +343,132 @@ const GoodsDetailPage: React.FC = () => {
         )}
 
         {activeTab === 'seo' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">SEO-оптимизация</h3>
-              <button
-                onClick={handleGenerateSeo}
-                disabled={seoLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-              >
-                {seoLoading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Генерация...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={18} />
-                    Сгенерировать SEO
-                  </>
-                )}
-              </button>
-            </div>
-
-            {seoError && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
-                {seoError}
-              </div>
-            )}
-
-            {generatedSeo ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Заголовок</label>
-                  <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white">
-                    {generatedSeo.title}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Описание</label>
-                  <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap">
-                    {generatedSeo.description}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Ключевые слова</label>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    {generatedSeo.keywords.map((kw, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm">
-                        {kw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSaveSeo}
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">SEO-оптимизация</h3>
+                <button
+                    onClick={handleGenerateSeo}
                     disabled={seoLoading}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    <Save size={18} />
-                    Сохранить
-                  </button>
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                >
+                    {seoLoading ? (
+                    <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Генерация...
+                    </>
+                    ) : (
+                    <>
+                        <Sparkles size={18} />
+                        Сгенерировать SEO
+                    </>
+                    )}
+                </button>
                 </div>
-              </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400">SEO ещё не сгенерировано.</p>
-            )}
 
-            {/* История SEO */}
-            {seoHistory.length > 1 && (
-              <div className="mt-8">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">История генераций</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {seoHistory.slice(1).map((item, idx) => (
-                    <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-sm">
-                      <div className="flex justify-between text-gray-500 dark:text-gray-400">
-                        <span>Заголовок: {item.title}</span>
-                        <span>Создано: {formatDate(new Date().toISOString())}</span>
-                      </div>
-                    </div>
-                  ))}
+                {seoError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                    {seoError}
                 </div>
-              </div>
+                )}
+
+                {/* Сгенерированное SEO */}
+                {generatedSeo ? (
+                <div className="space-y-4">
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Заголовок</label>
+                    <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white">
+                        {generatedSeo.title}
+                    </p>
+                    </div>
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Описание</label>
+                    <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white whitespace-pre-wrap">
+                        {generatedSeo.description}
+                    </p>
+                    </div>
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Ключевые слова</label>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                        {generatedSeo.keywords.map((kw, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm">
+                            {kw}
+                        </span>
+                        ))}
+                    </div>
+                    </div>
+
+                    {/* Сводка (если есть) */}
+                    {seoHistory?.summary && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Сводка</label>
+                        <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-900 dark:text-white">
+                        {seoHistory.summary}
+                        </p>
+                    </div>
+                    )}
+
+                    {/* Конкуренты (если есть) */}
+                    {seoHistory?.competitors && seoHistory.competitors.length > 0 && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">SEO конкурентов</label>
+                        <div className="mt-1 space-y-2">
+                        {seoHistory.competitors.map((comp, idx) => (
+                            <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                            <p className="text-sm font-medium">{comp.title}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{comp.description}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Ключевые слова: {comp.keywords.join(', ')}
+                            </p>
+                            {comp.url && (
+                                <a
+                                href={comp.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 text-xs hover:underline"
+                                >
+                                Ссылка на товар
+                                </a>
+                            )}
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+                    )}
+
+                    <div className="flex gap-3">
+                    <button
+                        onClick={handleSaveSeo}
+                        disabled={seoLoading}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        <Save size={18} />
+                        Сохранить
+                    </button>
+                    </div>
+                </div>
+                ) : (
+                <p className="text-gray-500 dark:text-gray-400">SEO ещё не сгенерировано.</p>
+                )}
+
+                {/* История SEO (если есть несколько генераций) */}
+                {seoHistory?.generated && (
+                <div className="mt-8">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    История генераций
+                    </h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {/* Здесь можно выводить историю, если у вас есть массив генераций */}
+                    <div className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-sm">
+                        <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                        <span>Заголовок: {seoHistory.generated.title}</span>
+                        <span>Создано: {formatDate(new Date().toISOString())}</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                )}
+            </div>
             )}
-          </div>
-        )}
 
         {activeTab === 'infographics' && (
           <div className="space-y-6">

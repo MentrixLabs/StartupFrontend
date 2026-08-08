@@ -1,5 +1,5 @@
 import client from './client';
-import { SeoGenerationRequest, SeoGenerationResponse } from './types';
+import { SeoGenerationRequest, SeoGenerationResponse, SeoHistoryResponse,  SeoCompetitorResponse, SeoDataResponse} from './types';
 
 // Генерация SEO-текстов для товара
 export const generateSeo = async (
@@ -17,8 +17,7 @@ export const saveSeoToGoods = async (
   await client.post(`/goods/${goodsId}/seo`, seoData);
 };
 
-// Получить историю генераций SEO для товара
-export const getSeoHistory = async (goodsId: string): Promise<SeoGenerationResponse[]> => {
-  const response = await client.get<SeoGenerationResponse[]>(`/goods/${goodsId}/seo-history`);
+export const getSeoHistory = async (goodsId: string): Promise<SeoHistoryResponse> => {
+  const response = await client.get(`/seo/history/${goodsId}`);
   return response.data;
 };

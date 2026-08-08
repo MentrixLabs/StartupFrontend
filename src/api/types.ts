@@ -38,6 +38,25 @@ export interface SeoGenerationResponse {
   // возможно, другие текстовые блоки
 }
 
+export interface SeoDataResponse {
+  title: string;
+  description: string;
+  keywords: string[];
+}
+
+export interface SeoCompetitorResponse {
+  title: string;
+  description: string;
+  keywords: string[];
+  url?: string;
+}
+
+export interface SeoHistoryResponse {
+  generated: SeoDataResponse | null;
+  summary: string | null;
+  competitors: SeoCompetitorResponse[];
+}
+
 // Данные для поиска инфографики
 export interface InfographicsSearchRequest {
   goods_id: string;
