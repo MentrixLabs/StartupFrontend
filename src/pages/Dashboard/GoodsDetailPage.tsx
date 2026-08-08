@@ -416,16 +416,6 @@ const GoodsDetailPage: React.FC = () => {
                     </div>
                     )}
 
-                    <div className="flex gap-3">
-                    <button
-                        onClick={handleSaveSeo}
-                        disabled={seoLoading}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                    >
-                        <Save size={18} />
-                        Сохранить
-                    </button>
-                    </div>
                 </div>
                 ) : (
                 <p className="text-gray-500 dark:text-gray-400">SEO ещё не сгенерировано.</p>
