@@ -4,7 +4,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGoods } from '@/hooks/useGoods';
 import {
   generateSeo,
-  saveSeoToGoods,
   getSeoHistory,
 } from '@/api/seo';
 import {
@@ -115,8 +114,6 @@ const GoodsDetailPage: React.FC = () => {
     try {
       const result = await generateSeo({ goods_id: id });
       setGeneratedSeo(result);
-      // Автоматически сохраняем?
-      await saveSeoToGoods(id, result);
       // Обновляем историю
       const history = await getSeoHistory(id);
       setSeoHistory(history);
@@ -126,22 +123,6 @@ const GoodsDetailPage: React.FC = () => {
       setSeoLoading(false);
     }
   }, [id]);
-
-  // Сохранение SEO (если не автоматически)
-  const handleSaveSeo = useCallback(async () => {
-    if (!id || !generatedSeo) return;
-    setSeoLoading(true);
-    try {
-      await saveSeoToGoods(id, generatedSeo);
-      // Обновляем историю
-      const history = await getSeoHistory(id);
-      setSeoHistory(history);
-    } catch (err: any) {
-      setSeoError(err.message || 'Ошибка сохранения SEO');
-    } finally {
-      setSeoLoading(false);
-    }
-  }, [id, generatedSeo]);
 
   // Поиск инфографики
   const handleSearchInfographics = useCallback(async () => {
