@@ -9,13 +9,13 @@ export const generateSeo = async (
   return response.data;
 };
 
-// Сохранение сгенерированного SEO в карточку товара (опционально)
-export const saveSeoToGoods = async (
-  goodsId: string,
-  seoData: SeoGenerationResponse,
-): Promise<void> => {
-  await client.post(`/goods/${goodsId}/seo`, seoData);
-};
+//// Сохранение сгенерированного SEO в карточку товара (опционально)
+//export const saveSeoToGoods = async (
+//  goodsId: string,
+//  seoData: SeoGenerationResponse,
+//): Promise<void> => {
+//  await client.post(`/goods/${goodsId}/seo`, seoData);
+//};
 
 export const getSeoHistory = async (goodsId: string): Promise<SeoHistoryResponse> => {
   const response = await client.get(`/seo/history/${goodsId}`);

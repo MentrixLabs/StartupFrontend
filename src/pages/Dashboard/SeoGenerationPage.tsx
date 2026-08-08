@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useGoods } from '@/hooks/useGoods';
 import {
   generateSeo,
-  saveSeoToGoods,
+  //saveSeoToGoods,
   getSeoHistory,
 } from '@/api/seo';
 import type { SeoGenerationResponse } from '@/api/types';
@@ -106,7 +106,7 @@ const SeoGenerationPage: React.FC = () => {
     setError(null);
     setSuccess(null);
     try {
-      await saveSeoToGoods(selectedGoodsId, generatedSeo);
+      //await saveSeoToGoods(selectedGoodsId, generatedSeo);
       // Обновляем историю
       const history = await getSeoHistory(selectedGoodsId);
       setSeoHistory(history);
