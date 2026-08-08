@@ -34,12 +34,13 @@ export const getGoodsList = async (
 
     // Если бэкенд вернул объект с пагинацией (ожидаемая структура)
     if (data && typeof data === 'object' && Array.isArray(data.items)) {
+      const totalItems = data.total ?? data.items.length;
       return {
         items: data.items,
         total: data.total ?? data.items.length,
         page: data.page ?? page,
         size: data.size ?? size,
-        pages: data.pages ?? Math.ceil((data.total ?? data.items.length) / size) || 1,
+        pages: data.pages ?? (totalItems > 0 ? Math.ceil(totalItems / size) : 0),
       };
     }
 
