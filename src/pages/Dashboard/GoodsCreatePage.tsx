@@ -40,7 +40,7 @@ const GoodsCreatePage: React.FC = () => {
       setSuccess('Товар успешно создан!');
       setTimeout(() => {
         navigate('/goods');
-      }, 1500);
+      }, 1000);
     } catch (err: any) {
       setError(err.message || 'Ошибка создания товара');
     } finally {

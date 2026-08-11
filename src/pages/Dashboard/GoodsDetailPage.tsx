@@ -347,12 +347,12 @@ const GoodsDetailPage: React.FC = () => {
               )}
             </dl>
 
-            {/* Галерея изображений товара */}
-            {allGoodsImages.length > 0 && (
+            {/* Галерея изображений */}
+            {(goodsItem.main_imgs?.length > 0 || goodsItem.desc_imgs?.length > 0) && (
               <div>
                 <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Изображения товара</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {allGoodsImages.map((url, idx) => (
+                  {[...(goodsItem.main_imgs || []), ...(goodsItem.desc_imgs || [])].map((url, idx) => (
                     <div key={idx} className="relative">
                       <img
                         src={url}
