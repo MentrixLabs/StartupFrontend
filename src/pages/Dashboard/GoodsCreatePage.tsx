@@ -8,8 +8,6 @@ const GoodsCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const { addGoods, loading: goodsLoading } = useGoods();
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -20,32 +18,26 @@ const GoodsCreatePage: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    // Валидация
-    if (!name.trim()) {
-      setError('Название товара обязательно');
-      return;
-    }
     if (!url.trim()) {
       setError('URL товара обязателен');
       return;
     }
-    // Простая проверка URL
     try {
       new URL(url);
     } catch {
-      setError('Введите корректный URL (например, https://example.com)');
+      setError('Введите корректный URL (например, https://www.ozon.ru/product/...)');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Передаём заглушку для name – бэкенд перезапишет её из данных парсинга
       await addGoods({
-        name: name.trim(),
-        description: description.trim() || undefined,
+        name: url.trim(),
+        description: '',
         url: url.trim(),
       });
       setSuccess('Товар успешно создан!');
-      // Перенаправляем на страницу списка через секунду
       setTimeout(() => {
         navigate('/goods');
       }, 1500);
@@ -60,7 +52,6 @@ const GoodsCreatePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Навигация назад */}
       <button
         onClick={() => navigate('/goods')}
         className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -69,7 +60,6 @@ const GoodsCreatePage: React.FC = () => {
         Назад к списку товаров
       </button>
 
-      {/* Заголовок */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Создание товара</h1>
         <p className="text-gray-600 dark:text-gray-400">
@@ -77,7 +67,6 @@ const GoodsCreatePage: React.FC = () => {
         </p>
       </div>
 
-      {/* Уведомления */}
       {error && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 flex items-start gap-3">
           <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
@@ -91,26 +80,7 @@ const GoodsCreatePage: React.FC = () => {
         </div>
       )}
 
-      {/* Форма */}
       <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-5">
-        {/* Название */}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Название товара <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Введите название товара"
-            className="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            required
-            disabled={isLoading}
-          />
-        </div>
-
-        {/* URL */}
         <div>
           <label htmlFor="url" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             URL товара <span className="text-red-500">*</span>
@@ -120,7 +90,7 @@ const GoodsCreatePage: React.FC = () => {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://example.com/product/123"
+            placeholder="https://www.ozon.ru/product/..."
             className="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             required
             disabled={isLoading}
@@ -130,23 +100,6 @@ const GoodsCreatePage: React.FC = () => {
           </p>
         </div>
 
-        {/* Описание */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Описание (опционально)
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Введите описание товара"
-            rows={4}
-            className="mt-1 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-y"
-            disabled={isLoading}
-          />
-        </div>
-
-        {/* Кнопки */}
         <div className="flex flex-wrap gap-3 pt-2">
           <button
             type="submit"

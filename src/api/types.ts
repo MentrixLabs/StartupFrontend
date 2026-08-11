@@ -1,11 +1,3 @@
-// Ответ сервера с пагинацией
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  size: number;
-  pages: number;
-}
 
 // Данные пользователя
 export interface User {
@@ -18,11 +10,35 @@ export interface User {
 // Данные товара (карточка) – соответствует новой схеме
 export interface GoodsItem {
   id: string;
-  name: string;          // соответствует cardname в БД
+  name: string;
   description?: string;
-  url: string;           // обязательно
+  url: string;
   created_at: string;
   updated_at?: string;
+
+  // Новые поля из парсера (сохраняются в ozon_items)
+  product_id?: string;
+  provider?: string;
+  brand?: string;
+  original_price?: number;
+  currency?: string;
+  rating?: number;
+  reviews_count?: number;
+  main_imgs?: string[];
+  desc_imgs?: string[];
+
+  // Поля из связанных таблиц
+  category?: string;
+  price?: number;
+}
+
+// Остальные типы остаются без изменений
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
 }
 
 // Данные для генерации SEO
