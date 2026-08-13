@@ -27,24 +27,21 @@ export const login = async (data: LoginData): Promise<void> => {
   formData.append('username', data.username);
   formData.append('password', data.password);
 
-  const response = await client.post<{ access_token: string; token_type: string }>(
-    '/auth/login',
-    formData,
-    {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    }
-  );
-  localStorage.setItem('access_token', response.data.access_token);
+  const response = await client.post('/auth/login', formData.toString(), {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+  const { access_token } = response.data;
+  localStorage.setItem('access_token', access_token);
+  return response.data;
 };
 
 // Регистрация – отправляет JSON (как раньше)
 export const register = async (data: RegisterData): Promise<User> => {
-  const response = await client.post<AuthResponse>('/auth/register', data);
-  const { access_token, user } = response.data;
-  localStorage.setItem('access_token', access_token);
-  return user;
+  const response = await client.post<User>('/auth/register', data);
+  // Не сохраняем токен – регистрация не даёт токен
+  return response.data;
 };
 
 // Выход – удаляем токен

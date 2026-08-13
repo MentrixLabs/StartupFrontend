@@ -41,7 +41,7 @@ const GoodsListPage: React.FC = () => {
     const query = searchQuery.toLowerCase().trim();
     return goods.filter((item) => {
       const name = item?.name?.toLowerCase() || '';
-      const article = item?.article?.toLowerCase() || '';
+      const article = item?.product_id?.toLowerCase() || '';
       const category = item?.category?.toLowerCase() || '';
       return name.includes(query) || article.includes(query) || category.includes(query);
     });
@@ -215,7 +215,7 @@ const GoodsListPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
-                      {item.article || '—'}
+                      {item.product_id || '—'}
                     </td>
                     <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
                       {item.price ? `${item.price} ₽` : '—'}

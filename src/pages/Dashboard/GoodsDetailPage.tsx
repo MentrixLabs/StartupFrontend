@@ -35,6 +35,8 @@ import {
 
 type TabType = 'info' | 'seo' | 'infographics' | 'reports';
 
+const placeholderImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e5e7eb'/%3E%3Ctext x='50' y='50' font-size='12' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EНет фото%3C/text%3E%3C/svg%3E";
+
 const GoodsDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -358,7 +360,7 @@ const GoodsDetailPage: React.FC = () => {
                         src={url}
                         alt={`Изображение ${idx + 1}`}
                         className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                        onError={(e) => (e.currentTarget.src = '/placeholder-image.png')}
+                        onError={(e) => (e.currentTarget.src = placeholderImage)}
                       />
                     </div>
                   ))}
@@ -516,7 +518,7 @@ const GoodsDetailPage: React.FC = () => {
                         src={url}
                         alt={`Изображение ${idx + 1}`}
                         className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                        onError={(e) => (e.currentTarget.src = '/placeholder-image.png')}
+                        onError={(e) => (e.currentTarget.src = placeholderImage)}
                       />
                       {/* Можно добавить кнопку удаления, если реализован эндпоинт */}
                     </div>
@@ -562,7 +564,7 @@ const GoodsDetailPage: React.FC = () => {
                         src={url}
                         alt={`Найденное ${idx + 1}`}
                         className="w-full h-32 object-cover rounded-lg"
-                        onError={(e) => (e.currentTarget.src = '/placeholder-image.png')}
+                        onError={(e) => (e.currentTarget.src = placeholderImage)}
                       />
                       {selectedImages.includes(url) && (
                         <div className="absolute top-1 right-1 bg-blue-600 text-white rounded-full p-0.5">

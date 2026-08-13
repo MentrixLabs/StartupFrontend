@@ -49,6 +49,19 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const RootRoute: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuthStore();
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 dark:text-gray-400">Загрузка приложения...</p>
+        </div>
+      </div>
+  );
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <HomePage />;
+};
+
 const App: React.FC = () => {
   const { loadUser, isLoading } = useAuthStore();
 
@@ -72,8 +85,9 @@ const App: React.FC = () => {
   return (
     <BrowserRouter basename="/StartupFrontend">
       <Routes>
+        <Route path="/" element={<RootRoute />} />
+
         {/* Публичные страницы (лендинг) – без макета (они сами содержат header/footer) */}
-        <Route path="/" element={<HomePage />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/pricing" element={<PricingPage />} />
 
@@ -110,7 +124,7 @@ const App: React.FC = () => {
 
         {/* Страница 404 */}
         <Route
-          path="*"
+          path="/StartupFrontend"
           element={
             <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
               <h1 className="text-6xl font-bold text-gray-800 dark:text-white">404</h1>

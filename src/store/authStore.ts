@@ -24,7 +24,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isLoading: false,
       error: null,
@@ -52,22 +52,18 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (username, email, password, fullName) => {
+      register: async (username: string, email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const user = await apiRegister({
-            username,
-            email,
-            password,
-            full_name: fullName,
-          });
-          set({
-            user,
-            isLoading: false,
-            error: null,
-            isAuthenticated: true,
-          });
+          // 1. Регистрируем пользователя
+          await apiRegister({ username, email, password});
+          
+          // 2. Автоматически логинимся (используем уже существующую функцию login)
+          await get().login(username, password);
+          // После успешного логина состояние уже обновлено в login,
+          // поэтому здесь ничего дополнительно не делаем.
         } catch (error: any) {
+          // Ошибка может быть как от регистрации, так и от логина
           const detail = error.response?.data?.detail || error.message || 'Ошибка регистрации';
           set({
             isLoading: false,
