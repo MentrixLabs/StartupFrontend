@@ -1,28 +1,43 @@
-import * as React from "react";
-import { cn } from "@/utils/cn";
+import React from "react";
+import { Link } from "react-router-dom";
 
-export const Table: React.FC<React.TableHTMLAttributes<HTMLTableElement>> = ({ className, ...props }) => (
-  <div className="w-full overflow-x-auto">
-    <table className={cn("w-full text-sm text-left", className)} {...props} />
-  </div>
+const LandingFooter: React.FC = () => (
+  <footer className="bg-gray-900 text-gray-400 py-12">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="grid md:grid-cols-4 gap-8">
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-semibold">P</div>
+            <span className="text-white text-lg font-semibold">Proskladai</span>
+          </div>
+          <p className="text-sm">Автоматизация SEO и инфографики для маркетплейсов.</p>
+        </div>
+        <div>
+          <h4 className="text-white font-medium mb-4">Продукт</h4>
+          <ul className="space-y-2 text-sm">
+            <li><Link to="/features" className="hover:text-white transition-colors">Возможности</Link></li>
+            <li><Link to="/pricing" className="hover:text-white transition-colors">Цены</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-white font-medium mb-4">Поддержка</h4>
+          <ul className="space-y-2 text-sm">
+            <li><a href="https://t.me/ProskladaiBot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Telegram-бот</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-white font-medium mb-4">Юридическое</h4>
+          <ul className="space-y-2 text-sm text-gray-500">
+            <li>Политика конфиденциальности</li>
+            <li>Условия использования</li>
+          </ul>
+        </div>
+      </div>
+      <div className="border-t border-gray-800 mt-8 pt-8 text-sm text-center">
+        &copy; {new Date().getFullYear()} Proskladai. Все права защищены.
+      </div>
+    </div>
+  </footer>
 );
 
-export const TableHeader: React.FC<React.HTMLAttributes<HTMLTableSectionElement>> = (props) => (
-  <thead className="border-b border-gray-200 dark:border-gray-700" {...props} />
-);
-
-export const TableBody: React.FC<React.HTMLAttributes<HTMLTableSectionElement>> = (props) => (
-  <tbody className="divide-y divide-gray-100 dark:divide-gray-800" {...props} />
-);
-
-export const TableRow: React.FC<React.HTMLAttributes<HTMLTableRowElement>> = ({ className, ...props }) => (
-  <tr className={cn("hover:bg-gray-50 dark:hover:bg-gray-700/50", className)} {...props} />
-);
-
-export const TableHead: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = ({ className, ...props }) => (
-  <th scope="col" className={cn("px-4 py-3 font-medium text-gray-500 dark:text-gray-400", className)} {...props} />
-);
-
-export const TableCell: React.FC<React.TdHTMLAttributes<HTMLTableCellElement>> = ({ className, ...props }) => (
-  <td className={cn("px-4 py-3 text-gray-900 dark:text-gray-100", className)} {...props} />
-);
+export default LandingFooter;
