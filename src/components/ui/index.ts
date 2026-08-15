@@ -5,7 +5,7 @@ export * from "./dropdown-menu";
 export * from "./form-field";
 export * from "./card";
 export * from "./badge";
-export * from "./stat-tile";
+export * from "./stattile";
 export * from "./switch";
 export * from "./confirm-dialog";
 export * from "./table";
