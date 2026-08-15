@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Badge, Button, Card, CardContent } from '@/components/ui';
 import LandingHeader from '@/components/landing/LandingHeader';
+import LandingFooter from '@/components/landing/LandingFooter';
 
 const FeaturesPage: React.FC = () => {
   return (

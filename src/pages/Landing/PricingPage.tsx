@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui';
 import LandingHeader from '@/components/landing/LandingHeader';
+import LandingFooter from '@/components/landing/LandingFooter';
 
 const PricingPage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
