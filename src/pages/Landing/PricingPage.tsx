@@ -1,20 +1,23 @@
 // src/pages/Landing/PricingPage.tsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight, Check, X, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import {
-  ArrowRight,
-  Check,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Zap,
-  Users,
-  FileText,
-  Image,
-  BarChart3,
-  MessageCircle,
-  HelpCircle,
-} from 'lucide-react';
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui';
+import LandingHeader from '@/components/landing/LandingHeader';
 
 const PricingPage: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -25,43 +28,17 @@ const PricingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* ===== HEADER ===== */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-              P
-            </div>
-            <span className="text-xl font-semibold text-gray-800 dark:text-white">
-              Proskladai
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Войти
-            </Link>
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              Начать бесплатно
-            </Link>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* ===== HERO SECTION ===== */}
-      <section className="py-20 bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900">
+      <section className="py-16 md:py-24 border-b border-gray-100 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium mb-4">
-              <Zap size={16} />
-              <span>Прозрачные тарифы</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+            <Badge className="mb-4">
+              <Zap size={16} aria-hidden="true" />
+              Прозрачные тарифы
+            </Badge>
+            <h1>
               Выберите свой <span className="text-blue-600 dark:text-blue-400">план</span>
             </h1>
             <p className="mt-6 text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
@@ -73,246 +50,213 @@ const PricingPage: React.FC = () => {
       </section>
 
       {/* ===== PRICING CARDS ===== */}
-      <section className="py-16 -mt-8">
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Keeps heading order h1 → h2 → h3: the plan names are `CardTitle` (<h3>) and
+              this section has no visible heading of its own. */}
+          <h2 className="sr-only">Тарифные планы</h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan, index) => (
-              <div
+              <Card
                 key={index}
-                className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg border ${
-                  plan.popular
-                    ? 'border-blue-500 dark:border-blue-400 ring-4 ring-blue-100 dark:ring-blue-900/30'
-                    : 'border-gray-200 dark:border-gray-700'
-                } p-6 flex flex-col transition-transform hover:scale-[1.02] duration-200`}
+                className={`flex flex-col ${
+                  plan.popular ? 'border-blue-500 dark:border-blue-400' : ''
+                }`}
               >
-                {plan.popular && (
-                  <span className="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full self-start -mt-10 mb-4">
-                    Популярный
-                  </span>
-                )}
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h3>
-                  <p className="text-gray-600 dark:text-gray-400 mt-1">{plan.description}</p>
-                </div>
-                <div className="mb-6">
-                  <span className="text-5xl font-extrabold text-gray-900 dark:text-white">
-                    {plan.price}
-                  </span>
-                  {plan.price !== 'Бесплатно' && (
-                    <span className="text-gray-500 dark:text-gray-400 text-lg font-medium ml-2">
-                      / мес
+                <CardHeader>
+                  {/* Fixed-height slot keeps plan names aligned across the row whether or
+                      not a card carries the badge. Replaces the old `-mt-10` float. */}
+                  <div className="min-h-6 mb-3">
+                    {plan.popular && <Badge variant="default">Популярный</Badge>}
+                  </div>
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <p className="mt-1 text-gray-600 dark:text-gray-400">{plan.description}</p>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <div className="mb-6">
+                    <span className="text-4xl font-semibold text-gray-900 dark:text-white">
+                      {plan.price}
                     </span>
-                  )}
-                  {plan.price === 'Бесплатно' && (
-                    <span className="text-gray-500 dark:text-gray-400 text-lg font-medium ml-2">
-                      навсегда
+                    <span className="ml-2 text-lg font-medium text-gray-500 dark:text-gray-400">
+                      {plan.price === 'Бесплатно' ? 'навсегда' : '/ мес'}
                     </span>
-                  )}
-                </div>
-                <ul className="space-y-3 flex-1">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2 text-gray-600 dark:text-gray-300">
-                      {feature.included ? (
-                        <Check size={18} className="text-green-500 flex-shrink-0 mt-0.5" />
-                      ) : (
-                        <X size={18} className="text-gray-400 flex-shrink-0 mt-0.5" />
-                      )}
-                      <span className={feature.included ? '' : 'text-gray-400 dark:text-gray-500'}>
-                        {feature.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-8">
-                  <Link
-                    to={plan.ctaLink}
-                    className={`w-full inline-flex justify-center items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                      plan.popular
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200 dark:shadow-blue-900/30'
-                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white'
-                    }`}
+                  </div>
+                  <ul className="space-y-3">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-gray-600 dark:text-gray-300">
+                        {feature.included ? (
+                          <Check
+                            size={18}
+                            className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"
+                            role="img"
+                            aria-label="Включено"
+                          />
+                        ) : (
+                          <X
+                            size={18}
+                            className="text-gray-400 flex-shrink-0 mt-0.5"
+                            role="img"
+                            aria-label="Не включено"
+                          />
+                        )}
+                        <span className={feature.included ? '' : 'text-gray-500 dark:text-gray-500'}>
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant={plan.popular ? 'default' : 'secondary'}
+                    className="w-full"
                   >
-                    {plan.ctaText}
-                    <ArrowRight size={18} />
-                  </Link>
-                </div>
-              </div>
+                    <Link to={plan.ctaLink}>
+                      {plan.ctaText}
+                      <ArrowRight size={18} className="ml-2" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== FEATURES COMPARISON TABLE ===== */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-800/50">
+      <section className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-              Сравнение всех функций
-            </h2>
+            <h2>Сравнение всех функций</h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Подробная таблица для принятия решения
             </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                    Функция
-                  </th>
+          <Card className="max-w-5xl mx-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Функция</TableHead>
                   {plans.map((plan, idx) => (
-                    <th
+                    <TableHead
                       key={idx}
-                      className={`py-4 px-6 text-center text-sm font-semibold ${
-                        plan.popular ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
+                      className={`text-center ${
+                        plan.popular ? 'text-blue-600 dark:text-blue-400' : ''
                       }`}
                     >
                       {plan.name}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {comparisonFeatures.map((row, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 dark:border-gray-700/50">
-                    <td className="py-4 px-6 text-sm text-gray-800 dark:text-gray-200 font-medium">
-                      {row.feature}
-                    </td>
+                  <TableRow key={idx}>
+                    <TableCell className="font-medium">{row.feature}</TableCell>
                     {row.values.map((value, i) => (
-                      <td key={i} className="py-4 px-6 text-center">
+                      <TableCell key={i} className="text-center">
                         {typeof value === 'boolean' ? (
                           value ? (
-                            <Check size={20} className="text-green-500 mx-auto" />
+                            <Check
+                              size={20}
+                              className="text-green-600 dark:text-green-400 mx-auto"
+                              role="img"
+                              aria-label="Да"
+                            />
                           ) : (
-                            <X size={20} className="text-gray-400 mx-auto" />
+                            <X
+                              size={20}
+                              className="text-gray-400 mx-auto"
+                              role="img"
+                              aria-label="Нет"
+                            />
                           )
                         ) : (
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{value}</span>
+                          value
                         )}
-                      </td>
+                      </TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
         </div>
       </section>
 
       {/* ===== FAQ SECTION ===== */}
-      <section className="py-20">
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-              Часто задаваемые вопросы
-            </h2>
+            <h2>Часто задаваемые вопросы</h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Ответы на самые популярные вопросы
             </p>
           </div>
           <div className="space-y-4">
             {faqItems.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-              >
-                <button
-                  className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  onClick={() => toggleFaq(index)}
-                >
-                  <span className="font-medium text-gray-900 dark:text-white">{item.question}</span>
-                  {openFaq === index ? (
-                    <ChevronUp size={20} className="text-gray-500" />
-                  ) : (
-                    <ChevronDown size={20} className="text-gray-500" />
-                  )}
-                </button>
+              <Card key={index}>
+                <h3 className="text-base">
+                  <button
+                    type="button"
+                    id={`faq-trigger-${index}`}
+                    aria-expanded={openFaq === index}
+                    aria-controls={`faq-panel-${index}`}
+                    className="w-full px-6 py-4 flex items-center justify-between gap-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    onClick={() => toggleFaq(index)}
+                  >
+                    <span className="font-medium text-gray-900 dark:text-white">{item.question}</span>
+                    {openFaq === index ? (
+                      <ChevronUp size={20} className="text-gray-500 flex-shrink-0" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown size={20} className="text-gray-500 flex-shrink-0" aria-hidden="true" />
+                    )}
+                  </button>
+                </h3>
                 {openFaq === index && (
-                  <div className="px-6 pb-4 text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-4">
+                  <div
+                    id={`faq-panel-${index}`}
+                    role="region"
+                    aria-labelledby={`faq-trigger-${index}`}
+                    className="px-6 pb-4 pt-4 text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700"
+                  >
                     {item.answer}
                   </div>
                 )}
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== CTA SECTION ===== */}
-      <section className="py-20 bg-blue-600 dark:bg-blue-800">
+      <section className="py-16 md:py-24 border-t border-gray-100 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-white">
-              Начните с бесплатного тарифа
-            </h2>
-            <p className="mt-4 text-lg text-blue-100">
+          <div className="max-w-2xl mx-auto">
+            <h2>Начните с бесплатного тарифа</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Оцените все возможности без риска – первые 3 товара бесплатно.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-100 text-blue-700 font-medium rounded-lg shadow-lg transition-all hover:scale-105"
-              >
-                Зарегистрироваться
-                <ArrowRight size={20} />
-              </Link>
-              <a
-                href="https://t.me/ProskladaiBot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 border border-white/30 hover:bg-white/10 text-white font-medium rounded-lg transition-colors"
-              >
-                Открыть бота
-              </a>
+              <Button asChild size="lg">
+                <Link to="/register">
+                  Зарегистрироваться
+                  <ArrowRight size={20} className="ml-2" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <a href="https://t.me/ProskladaiBot" target="_blank" rel="noopener noreferrer">
+                  Открыть бота
+                </a>
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                  P
-                </div>
-                <span className="text-white text-lg font-semibold">Proskladai</span>
-              </div>
-              <p className="text-sm">
-                Автоматизация SEO и инфографики для маркетплейсов.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-4">Продукт</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/features" className="hover:text-white transition-colors">Возможности</Link></li>
-                <li><Link to="/pricing" className="hover:text-white transition-colors">Цены</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Блог</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-4">Поддержка</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="#" className="hover:text-white transition-colors">FAQ</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Контакты</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Помощь</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-4">Юридическое</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="#" className="hover:text-white transition-colors">Политика конфиденциальности</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Условия использования</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-sm text-center">
-            &copy; {new Date().getFullYear()} Proskladai. Все права защищены.
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 };

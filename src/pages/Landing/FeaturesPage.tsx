@@ -7,7 +7,7 @@ import {
   Image as ImageIcon,
   BarChart3,
   User,
-  Users,  // ← добавьте эту строку
+  Users,
   Database,
   Sparkles,
   Search,
@@ -19,47 +19,23 @@ import {
   Layout,
   CheckCircle2,
 } from 'lucide-react';
+import { Badge, Button, Card, CardContent } from '@/components/ui';
+import LandingHeader from '@/components/landing/LandingHeader';
 
 const FeaturesPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* ===== HEADER ===== */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-              P
-            </div>
-            <span className="text-xl font-semibold text-gray-800 dark:text-white">
-              Proskladai
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Войти
-            </Link>
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              Начать бесплатно
-            </Link>
-          </div>
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* ===== HERO SECTION ===== */}
-      <section className="py-20 bg-gradient-to-b from-blue-50 to-white dark:from-gray-800 dark:to-gray-900">
+      <section className="py-16 md:py-24 border-b border-gray-100 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium mb-4">
-              <Sparkles size={16} />
-              <span>Все возможности Proskladai</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+            <Badge className="mb-4">
+              <Sparkles size={16} aria-hidden="true" />
+              Все возможности Proskladai
+            </Badge>
+            <h1>
               Инструменты для идеальной{' '}
               <span className="text-blue-600 dark:text-blue-400">карточки товара</span>
             </h1>
@@ -72,50 +48,47 @@ const FeaturesPage: React.FC = () => {
       </section>
 
       {/* ===== MAIN FEATURES GRID ===== */}
-      <section className="py-20">
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-8">
             {mainFeatures.map((feature, index) => (
-              <div
-                key={index}
-                className="group bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                    {feature.icon}
+              <Card key={index}>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded flex items-center justify-center text-blue-600 dark:text-blue-400">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                        {feature.title}
+                      </h3>
+                      <p className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {feature.description}
+                      </p>
+                      {feature.bullets && (
+                        <ul className="mt-3 space-y-1">
+                          {feature.bullets.map((bullet, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <CheckCircle2 size={16} className="text-blue-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {feature.title}
-                    </h3>
-                    <p className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
-                      {feature.description}
-                    </p>
-                    {feature.bullets && (
-                      <ul className="mt-3 space-y-1">
-                        {feature.bullets.map((bullet, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <CheckCircle2 size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
-                            <span>{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== TECHNICAL CAPABILITIES ===== */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-800/50">
+      <section className="py-16 md:py-24 bg-gray-50 dark:bg-gray-800/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-              Технологии, стоящие за сервисом
-            </h2>
+            <h2>Технологии, стоящие за сервисом</h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Мы используем современные модели машинного обучения и надёжную архитектуру, чтобы обеспечить
               точность и скорость работы.
@@ -123,124 +96,70 @@ const FeaturesPage: React.FC = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {techFeatures.map((tech, index) => (
-              <div
-                key={index}
-                className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700"
-              >
-                <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
-                  {tech.icon}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tech.title}</h3>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{tech.description}</p>
-              </div>
+              <Card key={index}>
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 rounded flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
+                    {tech.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{tech.title}</h3>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{tech.description}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== BENEFITS SECTION ===== */}
-      <section className="py-20">
+      <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-              Почему выбирают Proskladai
-            </h2>
+            <h2>Почему выбирают Proskladai</h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Преимущества, которые делают наш сервис незаменимым для продавцов.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {benefits.map((benefit, index) => (
-              <div
-                key={index}
-                className="text-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700"
-              >
-                <div className="w-14 h-14 mx-auto bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 mb-4">
-                  {benefit.icon}
-                </div>
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{benefit.title}</h4>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{benefit.description}</p>
-              </div>
+              <Card key={index}>
+                <CardContent className="p-6 text-center">
+                  <div className="w-14 h-14 mx-auto bg-green-50 dark:bg-green-900/30 rounded flex items-center justify-center text-green-600 dark:text-green-400 mb-4">
+                    {benefit.icon}
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{benefit.title}</h4>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{benefit.description}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== CTA SECTION ===== */}
-      <section className="py-20 bg-blue-600 dark:bg-blue-800">
+      <section className="py-16 md:py-24 border-t border-gray-100 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-white">
-              Готовы попробовать все функции?
-            </h2>
-            <p className="mt-4 text-lg text-blue-100">
+          <div className="max-w-2xl mx-auto">
+            <h2>Готовы попробовать все функции?</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Зарегистрируйтесь и получите 3 товара бесплатно для полного тестирования.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-100 text-blue-700 font-medium rounded-lg shadow-lg transition-all hover:scale-105"
-              >
-                Создать аккаунт
-                <ArrowRight size={20} />
-              </Link>
-              <a
-                href="https://t.me/ProskladaiBot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 border border-white/30 hover:bg-white/10 text-white font-medium rounded-lg transition-colors"
-              >
-                Открыть бота
-              </a>
+              <Button asChild size="lg">
+                <Link to="/register">
+                  Создать аккаунт <ArrowRight size={20} className="ml-2" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <a href="https://t.me/ProskladaiBot" target="_blank" rel="noopener noreferrer">
+                  Открыть бота
+                </a>
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-                  P
-                </div>
-                <span className="text-white text-lg font-semibold">Proskladai</span>
-              </div>
-              <p className="text-sm">
-                Автоматизация SEO и инфографики для маркетплейсов.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-4">Продукт</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="/features" className="hover:text-white transition-colors">Возможности</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Цены</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Блог</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-4">Поддержка</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="#" className="hover:text-white transition-colors">FAQ</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Контакты</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Помощь</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-medium mb-4">Юридическое</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link to="#" className="hover:text-white transition-colors">Политика конфиденциальности</Link></li>
-                <li><Link to="#" className="hover:text-white transition-colors">Условия использования</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-sm text-center">
-            &copy; {new Date().getFullYear()} Proskladai. Все права защищены.
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 };

@@ -9,35 +9,35 @@ const AuthLayout: React.FC = () => {
         {/* Логотип и заголовок */}
         <div className="text-center">
           <Link to="/" className="inline-block">
-            <div className="mx-auto w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-4xl font-bold shadow-lg transform hover:scale-105 transition-transform duration-200">
+            <div className="mx-auto w-20 h-20 bg-blue-600 rounded-md flex items-center justify-center text-white text-4xl font-bold shadow-sm transform hover:scale-105 transition-transform duration-200">
               P
             </div>
           </Link>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+          <h1 className="mt-6 text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">
             Proskladai
-          </h2>
+          </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Автоматизация SEO и инфографики для маркетплейсов
           </p>
         </div>
 
         {/* Основной контейнер для страниц аутентификации */}
-        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow-sm rounded-lg sm:px-10 border border-gray-100 dark:border-gray-700">
           <Outlet />
         </div>
 
         {/* Нижний колонтитул */}
-        <div className="text-center text-xs text-gray-500 dark:text-gray-400 space-y-1">
+        <footer className="text-center text-xs text-gray-500 dark:text-gray-400 space-y-1">
           <p>&copy; {new Date().getFullYear()} Proskladai. Все права защищены.</p>
-          <p className="flex justify-center gap-4">
+          <nav className="flex justify-center gap-4">
             <Link to="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Политика конфиденциальности
             </Link>
             <Link to="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Условия использования
             </Link>
-          </p>
-        </div>
+          </nav>
+        </footer>
       </div>
     </div>
   );

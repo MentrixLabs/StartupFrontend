@@ -3,6 +3,19 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGoods } from '@/hooks/useGoods';
 import {
+  Alert,
+  Button,
+  Card,
+  ConfirmDialog,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui';
+import {
   Plus,
   Search,
   Pencil,
@@ -11,7 +24,7 @@ import {
   Package,
   ChevronLeft,
   ChevronRight,
-  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 
 const GoodsListPage: React.FC = () => {
@@ -29,33 +42,33 @@ const GoodsListPage: React.FC = () => {
   } = useGoods();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(page || 1);
+  const [currentPage, setCurrentPage] = useState<number>(page);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  // Фильтрация товаров (безопасная)
+  // Фильтрация товаров по поисковому запросу (локальная)
   const filteredGoods = useMemo(() => {
-    // Защита от undefined/null/не-массива
-    if (!goods || !Array.isArray(goods)) return [];
     if (!searchQuery.trim()) return goods;
     const query = searchQuery.toLowerCase().trim();
-    return goods.filter((item) => {
-      const name = item?.name?.toLowerCase() || '';
-      const article = item?.product_id?.toLowerCase() || '';
-      const category = item?.category?.toLowerCase() || '';
-      return name.includes(query) || article.includes(query) || category.includes(query);
-    });
+    return goods.filter(
+      (item) =>
+        item.name.toLowerCase().includes(query) ||
+        (item.product_id && item.product_id.toLowerCase().includes(query)) ||
+        (item.category && item.category.toLowerCase().includes(query))
+    );
   }, [goods, searchQuery]);
 
+  // Обработчик смены страницы
   const handlePageChange = useCallback(
     (newPage: number) => {
-      if (newPage < 1 || (pages && newPage > pages)) return;
+      if (newPage < 1 || newPage > pages) return;
       setCurrentPage(newPage);
       fetchGoods(newPage, size);
     },
     [fetchGoods, pages, size]
   );
 
+  // Удаление товара
   const handleDelete = useCallback(
     async (id: string) => {
       if (isDeleting) return;
@@ -63,8 +76,8 @@ const GoodsListPage: React.FC = () => {
       try {
         await removeGoods(id);
         setDeleteConfirm(null);
-        const currentGoods = goods || [];
-        if (currentGoods.length === 1 && currentPage > 1) {
+        // Если после удаления на странице нет товаров и это не первая страница, переходим на предыдущую
+        if (goods.length === 1 && currentPage > 1) {
           handlePageChange(currentPage - 1);
         }
       } catch (err) {
@@ -73,11 +86,11 @@ const GoodsListPage: React.FC = () => {
         setIsDeleting(false);
       }
     },
-    [removeGoods, goods, currentPage, handlePageChange, isDeleting]
+    [removeGoods, goods.length, currentPage, handlePageChange, isDeleting]
   );
 
+  // Форматирование даты
   const formatDate = (dateString: string) => {
-    if (!dateString) return '—';
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
       day: '2-digit',
@@ -87,11 +100,11 @@ const GoodsListPage: React.FC = () => {
   };
 
   // Состояние загрузки
-  if (loading && (!goods || goods.length === 0)) {
+  if (loading && goods.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex flex-col items-center gap-4" role="status">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" aria-hidden="true" />
           <p className="text-gray-500 dark:text-gray-400">Загрузка товаров...</p>
         </div>
       </div>
@@ -99,20 +112,21 @@ const GoodsListPage: React.FC = () => {
   }
 
   // Ошибка
-  if (error && (!goods || goods.length === 0)) {
+  if (error && goods.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle size={48} className="text-red-500 mx-auto mb-3" />
-          <p className="text-gray-700 dark:text-gray-300 font-medium">Не удалось загрузить товары</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{error}</p>
-          <button
+      <div className="max-w-2xl">
+        <Alert variant="error">
+          <p className="font-medium">Не удалось загрузить товары</p>
+          <p className="mt-1">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
             onClick={() => fetchGoods(currentPage, size)}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Повторить
-          </button>
-        </div>
+          </Button>
+        </Alert>
       </div>
     );
   }
@@ -122,34 +136,36 @@ const GoodsListPage: React.FC = () => {
       {/* Заголовок и кнопка добавления */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Товары</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Товары</h1>
           <p className="text-gray-600 dark:text-gray-400">
             Управляйте карточками товаров для оптимизации
           </p>
         </div>
-        <button
-          onClick={() => navigate('/goods/new')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-        >
-          <Plus size={20} />
+        <Button onClick={() => navigate('/goods/new')}>
+          <Plus size={18} className="mr-2" aria-hidden="true" />
           Добавить товар
-        </button>
+        </Button>
       </div>
 
       {/* Поиск и информация */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            size={18}
+            aria-hidden="true"
+          />
+          <Input
             type="text"
+            aria-label="Поиск товаров"
             placeholder="Поиск по названию, артикулу или категории..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className="pl-10"
           />
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          Всего: <span className="font-medium">{total || 0}</span> товаров
+          Всего: <span className="font-medium">{total}</span> товаров
           {searchQuery && (
             <span className="ml-1">
               (найдено: <span className="font-medium">{filteredGoods.length}</span>)
@@ -159,168 +175,148 @@ const GoodsListPage: React.FC = () => {
       </div>
 
       {/* Таблица товаров */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <Card>
         {filteredGoods.length === 0 ? (
           <div className="py-16 text-center">
-            <Package size={48} className="text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+            <Package
+              size={48}
+              className="text-gray-300 dark:text-gray-600 mx-auto mb-3"
+              aria-hidden="true"
+            />
             <p className="text-gray-600 dark:text-gray-400">
               {searchQuery ? 'Товары не найдены' : 'Нет добавленных товаров'}
             </p>
             {!searchQuery && (
-              <button
-                onClick={() => navigate('/goods/new')}
-                className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
-                <Plus size={18} />
+              <Button className="mt-3" onClick={() => navigate('/goods/new')}>
+                <Plus size={18} className="mr-2" aria-hidden="true" />
                 Добавить первый товар
-              </button>
+              </Button>
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                <tr>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Название
-                  </th>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Артикул
-                  </th>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Цена
-                  </th>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Дата
-                  </th>
-                  <th className="py-3 px-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {filteredGoods.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 flex-shrink-0">
-                          <Package size={16} />
-                        </div>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {item.name}
-                        </span>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Название</TableHead>
+                <TableHead>Артикул</TableHead>
+                <TableHead>Цена</TableHead>
+                <TableHead>Дата</TableHead>
+                <TableHead className="text-right">Действия</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredGoods.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center text-gray-600 dark:text-gray-300 flex-shrink-0">
+                        <Package size={16} aria-hidden="true" />
                       </div>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
-                      {item.product_id || '—'}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-300">
-                      {item.price ? `${item.price} ₽` : '—'}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(item.created_at)}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => navigate(`/goods/${item.id}`)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                          title="Просмотр"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button
-                          onClick={() => navigate(`/goods/${item.id}/edit`)}
-                          className="p-1.5 text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                          title="Редактировать"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(item.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                          title="Удалить"
-                          disabled={isDeleting}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {item.name}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-gray-600 dark:text-gray-300">
+                    {item.article || '—'}
+                  </TableCell>
+                  <TableCell className="text-gray-600 dark:text-gray-300">
+                    {item.price ? `${item.price} ₽` : '—'}
+                  </TableCell>
+                  <TableCell className="text-gray-500 dark:text-gray-400">
+                    {formatDate(item.created_at)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-gray-500 dark:text-gray-400"
+                        onClick={() => navigate(`/goods/${item.id}`)}
+                        title="Просмотр"
+                        aria-label="Просмотр"
+                      >
+                        <Eye size={18} aria-hidden="true" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-gray-500 dark:text-gray-400"
+                        onClick={() => navigate(`/goods/${item.id}/edit`)}
+                        title="Редактировать"
+                        aria-label="Редактировать"
+                      >
+                        <Pencil size={18} aria-hidden="true" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                        onClick={() => setDeleteConfirm(item.id)}
+                        title="Удалить"
+                        aria-label="Удалить"
+                        disabled={isDeleting}
+                      >
+                        <Trash2 size={18} aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
 
         {/* Пагинация */}
-        {pages && pages > 1 && (
+        {pages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">
               Страница {currentPage} из {pages}
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Предыдущая страница"
               >
-                <ChevronLeft size={18} />
-              </button>
+                <ChevronLeft size={18} aria-hidden="true" />
+              </Button>
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {currentPage} / {pages}
               </span>
-              <button
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === pages}
-                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Следующая страница"
               >
-                <ChevronRight size={18} />
-              </button>
+                <ChevronRight size={18} aria-hidden="true" />
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
-      {/* Модальное окно подтверждения удаления */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 mx-4">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-                <Trash2 size={24} className="text-red-600 dark:text-red-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Удалить товар?
-                </h3>
-                <p className="mt-2 text-gray-600 dark:text-gray-400 text-sm">
-                  Это действие невозможно отменить. Все связанные данные (SEO, инфографика, отчёты) будут удалены.
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                disabled={isDeleting}
-              >
-                Отмена
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Удаление...' : 'Удалить'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Подтверждение удаления */}
+      <ConfirmDialog
+        open={deleteConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteConfirm(null);
+        }}
+        title="Удалить товар?"
+        description="Это действие невозможно отменить. Все связанные данные (SEO, инфографика, отчёты) будут удалены."
+        confirmLabel={isDeleting ? 'Удаление...' : 'Удалить'}
+        isDestructive
+        isLoading={isDeleting}
+        onConfirm={() => {
+          if (deleteConfirm) void handleDelete(deleteConfirm);
+        }}
+      />
     </div>
   );
 };

@@ -202,7 +202,7 @@ const InfographicsPage: React.FC = () => {
               <option value="">-- Выберите товар --</option>
               {goods.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.name} {item.article ? `(${item.article})` : ''}
+                  {item.name} {item.product_id ? `(${item.product_id})` : ''}
                 </option>
               ))}
             </select>
