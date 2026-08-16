@@ -25,7 +25,6 @@ import InfographicsPage from '@/pages/Dashboard/InfographicsPage';
 import ReportsPage from '@/pages/Dashboard/ReportsPage';
 import ProfilePage from '@/pages/Dashboard/ProfilePage';
 import SettingsPage from '@/pages/Dashboard/SettingsPage';
-import GoodsCreatePage from '@/pages/Dashboard/GoodsCreatePage';
 
 // Компонент для защищённых маршрутов
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -49,19 +48,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-const RootRoute: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuthStore();
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-500 dark:text-gray-400">Загрузка приложения...</p>
-        </div>
-      </div>
-  );
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <HomePage />;
-};
-
 const App: React.FC = () => {
   const { loadUser, isLoading } = useAuthStore();
 
@@ -83,11 +69,10 @@ const App: React.FC = () => {
   }
 
   return (
-    <BrowserRouter basename="/StartupFrontend">
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<RootRoute />} />
-
         {/* Публичные страницы (лендинг) – без макета (они сами содержат header/footer) */}
+        <Route path="/" element={<HomePage />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/pricing" element={<PricingPage />} />
 
@@ -109,7 +94,7 @@ const App: React.FC = () => {
         >
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/goods" element={<GoodsListPage />} />
-          <Route path="/goods/new" element={<GoodsCreatePage />} />          
+          <Route path="/goods/new" element={<GoodsDetailPage />} /> {/* или отдельная страница создания */}
           <Route path="/goods/:id" element={<GoodsDetailPage />} />
           <Route path="/goods/:id/edit" element={<GoodsDetailPage />} />
           <Route path="/seo" element={<SeoGenerationPage />} />
@@ -124,7 +109,7 @@ const App: React.FC = () => {
 
         {/* Страница 404 */}
         <Route
-          path="/StartupFrontend"
+          path="*"
           element={
             <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
               <h1 className="text-6xl font-bold text-gray-800 dark:text-white">404</h1>

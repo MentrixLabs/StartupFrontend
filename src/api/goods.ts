@@ -1,79 +1,42 @@
 import client from './client';
 import { GoodsItem, PaginatedResponse } from './types';
 
+// Создание товара
 interface CreateGoodsData {
   name: string;
   description?: string;
-  url: string;
+  article?: string;
+  price?: number;
+  category?: string;
 }
 
-interface UpdateGoodsData {
-  name?: string;
-  description?: string;
-  url?: string;
-}
+// Обновление товара
+interface UpdateGoodsData extends Partial<CreateGoodsData> {}
 
+// Получить список товаров (с пагинацией)
 export const getGoodsList = async (
   page: number = 1,
   size: number = 20,
 ): Promise<PaginatedResponse<GoodsItem>> => {
-  try {
-    const response = await client.get('/goods', { params: { page, size } });
-    const data = response.data;
-
-    // Если бэкенд вернул массив – это список товаров без пагинации
-    if (Array.isArray(data)) {
-      return {
-        items: data,
-        total: data.length,
-        page: page,
-        size: size,
-        pages: Math.ceil(data.length / size) || 1,
-      };
-    }
-
-    // Если бэкенд вернул объект с пагинацией (ожидаемая структура)
-    if (data && typeof data === 'object' && Array.isArray(data.items)) {
-      const totalItems = data.total ?? data.items.length;
-      return {
-        items: data.items,
-        total: data.total ?? data.items.length,
-        page: data.page ?? page,
-        size: data.size ?? size,
-        pages: data.pages ?? (totalItems > 0 ? Math.ceil(totalItems / size) : 0),
-      };
-    }
-
-    // Если ничего не подошло – возвращаем пустой массив
-    return {
-      items: [],
-      total: 0,
-      page,
-      size,
-      pages: 0,
-    };
-  } catch (error) {
-    console.error('Ошибка загрузки товаров:', error);
-    return {
-      items: [],
-      total: 0,
-      page,
-      size,
-      pages: 0,
-    };
-  }
+  const response = await client.get<PaginatedResponse<GoodsItem>>('/goods', {
+    params: { page, size },
+  });
+  return response.data;
 };
 
+// Получить один товар по ID
 export const getGoodsById = async (id: string): Promise<GoodsItem> => {
   const response = await client.get<GoodsItem>(`/goods/${id}`);
   return response.data;
 };
 
+// Создать новый товар
 export const createGoods = async (data: CreateGoodsData): Promise<GoodsItem> => {
   const response = await client.post<GoodsItem>('/goods', data);
   return response.data;
 };
 
+// Обновить товар
 export const updateGoods = async (
   id: string,
   data: UpdateGoodsData,
@@ -82,6 +45,13 @@ export const updateGoods = async (
   return response.data;
 };
 
+// Удалить товар
 export const deleteGoods = async (id: string): Promise<void> => {
   await client.delete(`/goods/${id}`);
+};
+
+// Загрузка данных о товаре из парсинга (например, по артикулу)
+export const parseGoodsByArticle = async (article: string): Promise<GoodsItem> => {
+  const response = await client.post<GoodsItem>('/goods/parse', { article });
+  return response.data;
 };

@@ -1,3 +1,11 @@
+// Ответ сервера с пагинацией
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
 
 // Данные пользователя
 export interface User {
@@ -7,38 +15,17 @@ export interface User {
   created_at: string;
 }
 
-// Данные товара (карточка) – соответствует новой схеме
+// Данные товара (карточка)
 export interface GoodsItem {
   id: string;
   name: string;
   description?: string;
-  url: string;
+  article?: string;
+  price?: number;
+  category?: string;
+  // Дополнительные поля по необходимости
   created_at: string;
   updated_at?: string;
-
-  // Новые поля из парсера (сохраняются в ozon_items)
-  product_id?: string;
-  provider?: string;
-  brand?: string;
-  original_price?: number;
-  currency?: string;
-  rating?: number;
-  reviews_count?: number;
-  main_imgs?: string[];
-  desc_imgs?: string[];
-
-  // Поля из связанных таблиц
-  category?: string;
-  price?: number;
-}
-
-// Остальные типы остаются без изменений
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  size: number;
-  pages: number;
 }
 
 // Данные для генерации SEO
@@ -52,25 +39,6 @@ export interface SeoGenerationResponse {
   description: string;
   keywords: string[];
   // возможно, другие текстовые блоки
-}
-
-export interface SeoDataResponse {
-  title: string;
-  description: string;
-  keywords: string[];
-}
-
-export interface SeoCompetitorResponse {
-  title: string;
-  description: string;
-  keywords: string[];
-  url?: string;
-}
-
-export interface SeoHistoryResponse {
-  generated: SeoDataResponse | null;
-  summary: string | null;
-  competitors: SeoCompetitorResponse[];
 }
 
 // Данные для поиска инфографики

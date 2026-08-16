@@ -1,7 +1,6 @@
 // src/pages/Dashboard/SettingsPage.tsx
 import React, { useState, useEffect } from 'react';
 import {
-  Settings,
   Moon,
   Sun,
   Monitor,
@@ -11,12 +10,10 @@ import {
   Sparkles,
   Save,
   RotateCcw,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  Shield,
   Zap,
 } from 'lucide-react';
+import { Alert, Button, Card, CardContent, FormField, Input, Switch } from '@/components/ui';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // Типы для настроек
 interface UserSettings {
@@ -43,29 +40,71 @@ const defaultSettings: UserSettings = {
 // Ключ для localStorage
 const SETTINGS_KEY = 'proskladai_settings';
 
+// Отдельный ключ только для темы: его читает src/main.tsx на старте приложения,
+// до первого рендера React, чтобы не было вспышки светлой темы у тёмного пользователя.
+const THEME_KEY = 'theme';
+
+// Реальное применение темы: tailwind.config.js использует darkMode: 'class',
+// поэтому достаточно переключить класс `dark` на <html>.
+const applyTheme = (theme: 'light' | 'dark' | 'system') => {
+  const isDark =
+    theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', isDark);
+};
+
+// Варианты выбора вынесены из JSX, чтобы типы значений выводились из UserSettings,
+// а не расширялись до string.
+const themeOptions: { value: UserSettings['theme']; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Светлая', icon: Sun },
+  { value: 'dark', label: 'Тёмная', icon: Moon },
+  { value: 'system', label: 'Системная', icon: Monitor },
+];
+
+const languageOptions: { value: UserSettings['language']; label: string; icon: typeof Globe }[] = [
+  { value: 'ru', label: 'Русский', icon: Globe },
+  { value: 'en', label: 'English', icon: Globe },
+];
+
+const seoModelOptions: { value: UserSettings['seoModel']; label: string; icon: typeof Sparkles }[] = [
+  { value: 'deepseek', label: 'DeepSeek', icon: Sparkles },
+  { value: 'chatgpt', label: 'ChatGPT', icon: Zap },
+];
+
+// Тема — единственное поле, которое читается НЕ из SETTINGS_KEY: THEME_KEY пишется
+// сразу при выборе темы, а SETTINGS_KEY обновляется только по кнопке «Сохранить».
+// Если бы тему брали из SETTINGS_KEY, то после перезагрузки без явного сохранения
+// эффект синхронизации на монтировании откатил бы уже применённый main.tsx выбор
+// и вдобавок перезаписал бы THEME_KEY старым значением. THEME_KEY авторитетен для
+// того, что реально применено; SETTINGS_KEY хранит копию темы для полноты объекта.
+const loadTheme = (): UserSettings['theme'] => {
+  const saved = localStorage.getItem(THEME_KEY);
+  return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
+};
+
+// Загрузка настроек из localStorage. Читаем синхронно при инициализации состояния,
+// а не в useEffect: иначе первый прогон эффекта темы успевал применить дефолтную
+// тему поверх той, что уже выставил main.tsx, и при заходе на страницу мигала
+// светлая тема. Логика чтения остальных полей та же, что была раньше.
+const loadSettings = (): UserSettings => {
+  const theme = loadTheme();
+  const saved = localStorage.getItem(SETTINGS_KEY);
+  if (!saved) return { ...defaultSettings, theme };
+  try {
+    const parsed = JSON.parse(saved);
+    // Объединяем с дефолтными, чтобы новые поля появились.
+    // theme идёт последним — он должен перебить значение из SETTINGS_KEY.
+    return { ...defaultSettings, ...parsed, theme };
+  } catch (e) {
+    console.error('Ошибка загрузки настроек:', e);
+    return { ...defaultSettings, theme };
+  }
+};
+
 const SettingsPage: React.FC = () => {
-  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [settings, setSettings] = useState<UserSettings>(loadSettings);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  // Загрузка настроек из localStorage при монтировании
-  useEffect(() => {
-    const saved = localStorage.getItem(SETTINGS_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Объединяем с дефолтными, чтобы новые поля появились
-        setSettings({ ...defaultSettings, ...parsed });
-      } catch (e) {
-        console.error('Ошибка загрузки настроек:', e);
-        setSettings(defaultSettings);
-      }
-    } else {
-      setSettings(defaultSettings);
-    }
-  }, []);
 
   // Сохранение настроек (локально + заглушка API)
   const handleSave = async () => {
@@ -82,8 +121,8 @@ const SettingsPage: React.FC = () => {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       setSuccess('Настройки успешно сохранены');
-    } catch (err: any) {
-      setError(err.message || 'Ошибка сохранения настроек');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ошибка сохранения настроек'));
     } finally {
       setSaving(false);
     }
@@ -103,78 +142,55 @@ const SettingsPage: React.FC = () => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Применение темы (для демонстрации — в реальности надо менять класс на html)
-  const applyTheme = (theme: UserSettings['theme']) => {
-    // Это заглушка, реальное применение темы должно быть в App или через контекст
-    console.log('Применение темы:', theme);
-    // Можно добавить логику переключения класса dark на html
-  };
-
-  // При изменении темы сразу применяем (для демонстрации)
+  // При изменении темы сразу применяем её ко всему приложению и запоминаем выбор.
+  // Единая точка: срабатывает и при выборе в UI, и при сбросе настроек, и после
+  // загрузки сохранённых настроек — так THEME_KEY не разъезжается с settings.theme.
   useEffect(() => {
     applyTheme(settings.theme);
+    localStorage.setItem(THEME_KEY, settings.theme);
   }, [settings.theme]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader2 size={32} className="animate-spin text-blue-500" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Настройки</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Настройки</h1>
         <p className="text-gray-600 dark:text-gray-400">
           Управляйте параметрами приложения и пользовательскими предпочтениями
         </p>
       </div>
 
       {/* Уведомления */}
-      {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 flex items-start gap-3">
-          <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
-      {success && (
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 flex items-start gap-3">
-          <CheckCircle size={20} className="flex-shrink-0 mt-0.5" />
-          <span>{success}</span>
-        </div>
-      )}
+      {error && <Alert variant="error">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Общие настройки */}
+      <Card>
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Общие настройки</h2>
         </div>
-        <div className="px-6 py-4 space-y-6">
+        <CardContent className="space-y-6">
           {/* Тема */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Тема оформления</label>
-            <div className="flex gap-3">
-              {[
-                { value: 'light', label: 'Светлая', icon: Sun },
-                { value: 'dark', label: 'Тёмная', icon: Moon },
-                { value: 'system', label: 'Системная', icon: Monitor },
-              ].map((option) => {
+            {/* Не <label>: у группы кнопок нет одного поля ввода, на которое можно
+                сослаться через htmlFor. Группа подписана через aria-labelledby. */}
+            <p id="theme-group-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Тема оформления
+            </p>
+            <div role="group" aria-labelledby="theme-group-label" className="flex flex-wrap gap-3">
+              {themeOptions.map((option) => {
                 const Icon = option.icon;
                 const isActive = settings.theme === option.value;
                 return (
-                  <button
+                  <Button
                     key={option.value}
-                    onClick={() => updateSetting('theme', option.value as UserSettings['theme'])}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                      isActive
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                    }`}
+                    type="button"
+                    variant={isActive ? 'default' : 'outline'}
+                    aria-pressed={isActive}
+                    onClick={() => updateSetting('theme', option.value)}
                   >
-                    <Icon size={18} />
-                    <span className="text-sm font-medium">{option.label}</span>
-                  </button>
+                    <Icon size={18} className="mr-2" aria-hidden="true" />
+                    {option.label}
+                  </Button>
                 );
               })}
             </div>
@@ -182,180 +198,146 @@ const SettingsPage: React.FC = () => {
 
           {/* Язык */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Язык интерфейса</label>
-            <div className="flex gap-3">
-              {[
-                { value: 'ru', label: 'Русский', icon: Globe },
-                { value: 'en', label: 'English', icon: Globe },
-              ].map((option) => {
+            <p id="language-group-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Язык интерфейса
+            </p>
+            <div role="group" aria-labelledby="language-group-label" className="flex flex-wrap gap-3">
+              {languageOptions.map((option) => {
+                const Icon = option.icon;
                 const isActive = settings.language === option.value;
                 return (
-                  <button
+                  <Button
                     key={option.value}
-                    onClick={() => updateSetting('language', option.value as UserSettings['language'])}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                      isActive
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                    }`}
+                    type="button"
+                    variant={isActive ? 'default' : 'outline'}
+                    aria-pressed={isActive}
+                    onClick={() => updateSetting('language', option.value)}
                   >
-                    <Globe size={18} />
-                    <span className="text-sm font-medium">{option.label}</span>
-                  </button>
+                    <Icon size={18} className="mr-2" aria-hidden="true" />
+                    {option.label}
+                  </Button>
                 );
               })}
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Настройки генерации */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <Card>
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Настройки генерации</h2>
         </div>
-        <div className="px-6 py-4 space-y-6">
+        <CardContent className="space-y-6">
           {/* Модель SEO */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Модель для SEO-генерации</label>
-            <div className="flex gap-3">
-              {[
-                { value: 'deepseek', label: 'DeepSeek', icon: Sparkles },
-                { value: 'chatgpt', label: 'ChatGPT', icon: Zap },
-              ].map((option) => {
+            <p id="seo-model-group-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Модель для SEO-генерации
+            </p>
+            <div role="group" aria-labelledby="seo-model-group-label" className="flex flex-wrap gap-3">
+              {seoModelOptions.map((option) => {
+                const Icon = option.icon;
                 const isActive = settings.seoModel === option.value;
                 return (
-                  <button
+                  <Button
                     key={option.value}
-                    onClick={() => updateSetting('seoModel', option.value as UserSettings['seoModel'])}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                      isActive
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                    }`}
+                    type="button"
+                    variant={isActive ? 'default' : 'outline'}
+                    aria-pressed={isActive}
+                    onClick={() => updateSetting('seoModel', option.value)}
                   >
-                    <option.icon size={18} />
-                    <span className="text-sm font-medium">{option.label}</span>
-                  </button>
+                    <Icon size={18} className="mr-2" aria-hidden="true" />
+                    {option.label}
+                  </Button>
                 );
               })}
             </div>
           </div>
 
           {/* Количество вариантов SEO */}
-          <div>
-            <label htmlFor="seoVariants" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Количество вариантов SEO-текстов
-            </label>
-            <input
-              id="seoVariants"
-              type="number"
-              min={1}
-              max={5}
-              value={settings.seoVariants}
-              onChange={(e) => updateSetting('seoVariants', Number(e.target.value))}
-              className="mt-1 w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">От 1 до 5 вариантов</p>
+          <div className="max-w-xs">
+            <FormField id="seoVariants" label="Количество вариантов SEO-текстов" hint="От 1 до 5 вариантов">
+              {(fieldProps) => (
+                <Input
+                  {...fieldProps}
+                  type="number"
+                  min={1}
+                  max={5}
+                  value={settings.seoVariants}
+                  onChange={(e) => updateSetting('seoVariants', Number(e.target.value))}
+                  className="w-32"
+                />
+              )}
+            </FormField>
           </div>
 
           {/* Количество изображений для инфографики */}
-          <div>
-            <label htmlFor="infographicsCount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Количество изображений для инфографики (по умолчанию)
-            </label>
-            <input
+          <div className="max-w-xs">
+            <FormField
               id="infographicsCount"
-              type="number"
-              min={1}
-              max={20}
-              value={settings.infographicsCount}
-              onChange={(e) => updateSetting('infographicsCount', Number(e.target.value))}
-              className="mt-1 w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">От 1 до 20 изображений</p>
+              label="Количество изображений для инфографики (по умолчанию)"
+              hint="От 1 до 20 изображений"
+            >
+              {(fieldProps) => (
+                <Input
+                  {...fieldProps}
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={settings.infographicsCount}
+                  onChange={(e) => updateSetting('infographicsCount', Number(e.target.value))}
+                  className="w-32"
+                />
+              )}
+            </FormField>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Уведомления */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <Card>
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Уведомления</h2>
         </div>
-        <div className="px-6 py-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Mail size={20} className="text-gray-500 dark:text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Email-уведомления</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Получать уведомления о завершении генераций на почту</p>
-              </div>
-            </div>
-            <button
-              onClick={() => updateSetting('emailNotifications', !settings.emailNotifications)}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.emailNotifications ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  settings.emailNotifications ? 'translate-x-6' : ''
-                }`}
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-3">
+            <Mail size={20} className="mt-0.5 shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+            <div className="flex-1">
+              <Switch
+                id="emailNotifications"
+                checked={settings.emailNotifications}
+                onCheckedChange={(checked) => updateSetting('emailNotifications', checked)}
+                label="Email-уведомления"
+                description="Получать уведомления о завершении генераций на почту"
               />
-            </button>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bell size={20} className="text-gray-500 dark:text-gray-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Автосохранение результатов</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Автоматически сохранять сгенерированный SEO и инфографику в карточку</p>
-              </div>
-            </div>
-            <button
-              onClick={() => updateSetting('autoSave', !settings.autoSave)}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.autoSave ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  settings.autoSave ? 'translate-x-6' : ''
-                }`}
+          <div className="flex items-start gap-3">
+            <Bell size={20} className="mt-0.5 shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+            <div className="flex-1">
+              <Switch
+                id="autoSave"
+                checked={settings.autoSave}
+                onCheckedChange={(checked) => updateSetting('autoSave', checked)}
+                label="Автосохранение результатов"
+                description="Автоматически сохранять сгенерированный SEO и инфографику в карточку"
               />
-            </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Кнопки действий */}
       <div className="flex flex-wrap gap-4">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-        >
-          {saving ? (
-            <>
-              <Loader2 size={18} className="animate-spin" />
-              Сохранение...
-            </>
-          ) : (
-            <>
-              <Save size={18} />
-              Сохранить настройки
-            </>
-          )}
-        </button>
-        <button
-          onClick={handleReset}
-          className="inline-flex items-center gap-2 px-6 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium rounded-lg transition-colors"
-        >
-          <RotateCcw size={18} />
+        <Button onClick={() => void handleSave()} isLoading={saving}>
+          {!saving && <Save size={18} className="mr-2" aria-hidden="true" />}
+          {saving ? 'Сохранение...' : 'Сохранить настройки'}
+        </Button>
+        <Button variant="secondary" onClick={handleReset}>
+          <RotateCcw size={18} className="mr-2" aria-hidden="true" />
           Сбросить настройки
-        </button>
+        </Button>
       </div>
     </div>
   );

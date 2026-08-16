@@ -5,9 +5,10 @@ import {
   createGoods,
   updateGoods,
   deleteGoods,
-  // parseGoodsByArticle, // удалено
+  parseGoodsByArticle,
 } from '@/api/goods';
 import type { GoodsItem, PaginatedResponse } from '@/api/types';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface UseGoodsReturn {
   goods: GoodsItem[];
@@ -22,7 +23,7 @@ interface UseGoodsReturn {
   addGoods: (data: Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>) => Promise<GoodsItem>;
   updateGoods: (id: string, data: Partial<Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>>) => Promise<GoodsItem>;
   removeGoods: (id: string) => Promise<void>;
-  // parseByArticle: (article: string) => Promise<GoodsItem>; // удалено
+  parseByArticle: (article: string) => Promise<GoodsItem>;
 }
 
 export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
@@ -36,6 +37,7 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     pages: 0,
   });
 
+  // Загрузка списка товаров
   const fetchGoods = useCallback(
     async (page: number = initialPage, size: number = initialSize) => {
       setLoading(true);
@@ -49,8 +51,8 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
           size: response.size,
           pages: response.pages,
         });
-      } catch (err: any) {
-        setError(err.message || 'Ошибка загрузки товаров');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Ошибка загрузки товаров'));
         setGoods([]);
       } finally {
         setLoading(false);
@@ -59,35 +61,40 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [initialPage, initialSize],
   );
 
+  // При монтировании загружаем первую страницу
   useEffect(() => {
     fetchGoods(initialPage, initialSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Получение одного товара
   const getGoods = useCallback(async (id: string): Promise<GoodsItem> => {
     setLoading(true);
     setError(null);
     try {
       const item = await getGoodsById(id);
       return item;
-    } catch (err: any) {
-      setError(err.message || 'Ошибка получения товара');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ошибка получения товара'));
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Добавление товара (обновляет список)
   const addGoods = useCallback(
     async (data: Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>): Promise<GoodsItem> => {
       setLoading(true);
       setError(null);
       try {
         const newItem = await createGoods(data);
+        // Обновляем список (добавляем в начало)
         setGoods((prev) => [newItem, ...prev]);
         setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
         return newItem;
-      } catch (err: any) {
-        setError(err.message || 'Ошибка создания товара');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Ошибка создания товара'));
         throw err;
       } finally {
         setLoading(false);
@@ -96,16 +103,18 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [],
   );
 
+  // Обновление товара
   const updateGoodsItem = useCallback(
     async (id: string, data: Partial<Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>>): Promise<GoodsItem> => {
       setLoading(true);
       setError(null);
       try {
         const updated = await updateGoods(id, data);
+        // Обновляем элемент в списке
         setGoods((prev) => prev.map((item) => (item.id === id ? updated : item)));
         return updated;
-      } catch (err: any) {
-        setError(err.message || 'Ошибка обновления товара');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Ошибка обновления товара'));
         throw err;
       } finally {
         setLoading(false);
@@ -114,16 +123,18 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [],
   );
 
+  // Удаление товара
   const removeGoods = useCallback(
     async (id: string): Promise<void> => {
       setLoading(true);
       setError(null);
       try {
         await deleteGoods(id);
+        // Убираем из списка
         setGoods((prev) => prev.filter((item) => item.id !== id));
         setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
-      } catch (err: any) {
-        setError(err.message || 'Ошибка удаления товара');
+      } catch (err) {
+        setError(getErrorMessage(err, 'Ошибка удаления товара'));
         throw err;
       } finally {
         setLoading(false);
@@ -132,7 +143,26 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     [],
   );
 
-  // parseByArticle удалён
+  // Парсинг товара по артикулу (добавляет в список)
+  const parseByArticle = useCallback(
+    async (article: string): Promise<GoodsItem> => {
+      setLoading(true);
+      setError(null);
+      try {
+        const parsed = await parseGoodsByArticle(article);
+        // Добавляем в список
+        setGoods((prev) => [parsed, ...prev]);
+        setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
+        return parsed;
+      } catch (err) {
+        setError(getErrorMessage(err, 'Ошибка парсинга товара'));
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return {
     goods,
@@ -147,6 +177,6 @@ export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
     addGoods,
     updateGoods: updateGoodsItem,
     removeGoods,
-    // parseByArticle, // удалён
+    parseByArticle,
   };
 };

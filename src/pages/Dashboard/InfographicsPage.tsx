@@ -1,6 +1,6 @@
 // src/pages/Dashboard/InfographicsPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useGoods } from '@/hooks/useGoods';
 import {
   searchInfographics,
@@ -8,31 +8,41 @@ import {
   saveInfographicsToGoods,
 } from '@/api/infographics';
 import {
-  Image,
-  Search,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  Package,
-  Trash2,
-  Save,
-  Minus,
-  Plus,
-  Check,
-  X,
-} from 'lucide-react';
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  ConfirmDialog,
+  FormField,
+  Select,
+  SelectableImageGrid,
+} from '@/components/ui';
+import { Loader2, Minus, Package, Plus, Save, Search, Trash2 } from 'lucide-react';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
-const placeholderImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e5e7eb'/%3E%3Ctext x='50' y='50' font-size='12' fill='%239ca3af' text-anchor='middle' dy='.3em'%3EНет фото%3C/text%3E%3C/svg%3E";
+/**
+ * `SelectableImageGrid` использует `key={url}` во внутреннем .map (задача 11), поэтому
+ * дублирующиеся URL в одном списке привели бы к конфликту ключей. Оба источника данных
+ * (поиск по внешнему API и сохранённый список товара) могут вернуть повторы, а модель
+ * выбора и так основана на URL (`selected.includes(url)`), то есть два одинаковых
+ * тайла всё равно переключались бы вместе. Дедупликация на входе убирает и то, и другое.
+ * Тот же приём применён в GoodsDetail/InfographicsTab.tsx (задача 22).
+ */
+const dedupe = (urls: string[]): string[] => Array.from(new Set(urls));
 
 const InfographicsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const goodsIdFromUrl = searchParams.get('goods_id');
 
-  const { goods, loading: goodsLoading, fetchGoods } = useGoods();
+  // `useGoods` сам грузит первую страницу при монтировании, поэтому размер страницы
+  // передаётся аргументом хука, а не вторым вызовом fetchGoods из этой страницы
+  // (см. отчёт задачи 23: два параллельных запроса гонялись, и выигрывал тот, что
+  // ответил последним — список молча обрезался до 20 позиций).
+  const { goods, loading: goodsLoading, error: goodsLoadError } = useGoods(1, 100);
 
   // Состояние выбранного товара
   const [selectedGoodsId, setSelectedGoodsId] = useState<string>(goodsIdFromUrl || '');
-  const [selectedGoods, setSelectedGoods] = useState<any>(null);
 
   // Состояние для количества изображений (по умолчанию 10)
   const [imageCount, setImageCount] = useState<number>(10);
@@ -41,48 +51,59 @@ const InfographicsPage: React.FC = () => {
   const [savedImages, setSavedImages] = useState<string[]>([]);
   const [foundImages, setFoundImages] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedSaved, setSelectedSaved] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Ошибка загрузки сохранённых изображений. Раньше уходила только в console.error,
+  // и сбой запроса был неотличим от «у товара просто нет инфографики» (аудит, п. 27).
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // Отдельный флаг именно первичной загрузки: `loading` относится к кнопке поиска,
+  // без своего флага пустое состояние мигало при каждой смене товара.
+  const [savedLoading, setSavedLoading] = useState<boolean>(false);
+  const [deleteOpen, setDeleteOpen] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  // Загрузка списка товаров при монтировании
+  // Загружаем сохранённые изображения при выборе товара.
+  // `getGoodsInfographics` — прямой axios-вызов без внутреннего catch, ошибка
+  // действительно доходит сюда reject-ом (в отличие от useGoods.fetchGoods, задача 20).
+  // Загрузка вынесена внутрь эффекта с флагом `cancelled`: быстрое переключение
+  // товаров иначе позволяло медленному раннему ответу перезаписать быстрый поздний.
   useEffect(() => {
-    fetchGoods(1, 100);
-  }, [fetchGoods]);
+    setFoundImages([]);
+    setSelectedImages([]);
+    setSelectedSaved([]);
 
-  // При изменении selectedGoodsId находим товар
-  useEffect(() => {
-    if (selectedGoodsId && goods.length > 0) {
-      const found = goods.find(g => g.id === selectedGoodsId);
-      setSelectedGoods(found || null);
-    } else {
-      setSelectedGoods(null);
-    }
-  }, [selectedGoodsId, goods]);
-
-  // Загружаем сохранённые изображения при выборе товара
-  useEffect(() => {
-    if (selectedGoodsId) {
-      loadSavedImages(selectedGoodsId);
-      // Сбрасываем найденные и выбранные
-      setFoundImages([]);
-      setSelectedImages([]);
-    } else {
+    if (!selectedGoodsId) {
       setSavedImages([]);
-      setFoundImages([]);
-      setSelectedImages([]);
+      setLoadError(null);
+      return;
     }
-  }, [selectedGoodsId]);
 
-  const loadSavedImages = useCallback(async (goodsId: string) => {
-    try {
-      const images = await getGoodsInfographics(goodsId);
-      setSavedImages(images);
-    } catch (err) {
-      console.error('Ошибка загрузки сохранённых изображений:', err);
-    }
-  }, []);
+    let cancelled = false;
+    const load = async () => {
+      setSavedLoading(true);
+      setLoadError(null);
+      try {
+        const images = await getGoodsInfographics(selectedGoodsId);
+        if (cancelled) return;
+        setSavedImages(dedupe(images));
+      } catch (err) {
+        if (cancelled) return;
+        // Список чистится, иначе изображения предыдущего товара остались бы на экране
+        // под баннером ошибки и выглядели бы как инфографика вновь выбранного товара.
+        setSavedImages([]);
+        setLoadError(getErrorMessage(err, 'Не удалось загрузить сохранённые изображения'));
+      } finally {
+        if (!cancelled) setSavedLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedGoodsId]);
 
   // Поиск инфографики
   const handleSearch = useCallback(async () => {
@@ -98,293 +119,320 @@ const InfographicsPage: React.FC = () => {
         goods_id: selectedGoodsId,
         count: imageCount,
       });
-      setFoundImages(result.images || []);
+      const images = dedupe(result.images || []);
+      setFoundImages(images);
       setSelectedImages([]);
-      if (result.images.length === 0) {
+      if (images.length === 0) {
         setSuccess('Изображения не найдены. Попробуйте изменить параметры.');
       } else {
-        setSuccess(`Найдено ${result.images.length} изображений`);
+        setSuccess(`Найдено ${images.length} изображений`);
       }
-    } catch (err: any) {
-      setError(err.message || 'Ошибка поиска инфографики');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ошибка поиска инфографики'));
     } finally {
       setLoading(false);
     }
   }, [selectedGoodsId, imageCount]);
 
-  // Сохранение выбранных изображений
+  // Сохранение выбранных изображений.
+  // ВНИМАНИЕ: выбранные ДОБАВЛЯЮТСЯ к уже сохранённым — это дословное поведение этой
+  // страницы, сохранено намеренно. GoodsDetail/InfographicsTab.tsx на тех же данных
+  // ЗАМЕЩАЕТ список; расхождение предсуществующее и зафиксировано в отчётах задач 22/24.
   const handleSaveSelected = useCallback(async () => {
     if (!selectedGoodsId || selectedImages.length === 0) return;
     setSaving(true);
     setError(null);
     setSuccess(null);
     try {
-      // Объединяем с уже сохранёнными (можно добавить только новые)
-      const merged = [...savedImages, ...selectedImages];
-      // Убираем дубликаты
-      const unique = Array.from(new Set(merged));
+      const unique = dedupe([...savedImages, ...selectedImages]);
       await saveInfographicsToGoods(selectedGoodsId, unique);
       // Обновляем список сохранённых
-      await loadSavedImages(selectedGoodsId);
+      const updated = await getGoodsInfographics(selectedGoodsId);
+      setSavedImages(dedupe(updated));
+      setLoadError(null);
       setFoundImages([]);
       setSelectedImages([]);
+      setSelectedSaved([]);
       setSuccess('Изображения успешно сохранены');
-    } catch (err: any) {
-      setError(err.message || 'Ошибка сохранения инфографики');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ошибка сохранения инфографики'));
     } finally {
       setSaving(false);
     }
-  }, [selectedGoodsId, selectedImages, savedImages, loadSavedImages]);
+  }, [selectedGoodsId, selectedImages, savedImages]);
 
-  // Удаление одного изображения из сохранённых
-  const handleRemoveSaved = useCallback(async (url: string) => {
-    if (!selectedGoodsId) return;
-    const updated = savedImages.filter(u => u !== url);
+  // Удаление выбранных сохранённых изображений.
+  // Раньше на каждом тайле висела кнопка-корзина, появлявшаяся только при hover
+  // (недоступна с клавиатуры и на тач-устройствах) и удалявшая без подтверждения.
+  // Общий SelectableImageGrid не рендерит оверлеи, поэтому удаление переехало на
+  // модель «выбрать → удалить выбранные», как в задаче 22.
+  const handleRemoveSelected = useCallback(async () => {
+    if (!selectedGoodsId || selectedSaved.length === 0 || isDeleting) return;
+    setIsDeleting(true);
+    setError(null);
+    setSuccess(null);
+    const removedCount = selectedSaved.length;
+    const remaining = savedImages.filter((url) => !selectedSaved.includes(url));
     try {
-      await saveInfographicsToGoods(selectedGoodsId, updated);
-      setSavedImages(updated);
-      setSuccess('Изображение удалено');
-    } catch (err: any) {
-      setError(err.message || 'Ошибка удаления изображения');
+      await saveInfographicsToGoods(selectedGoodsId, remaining);
+      setSavedImages(remaining);
+      setSelectedSaved([]);
+      setDeleteOpen(false);
+      setSuccess(`Удалено изображений: ${removedCount}`);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ошибка удаления изображения'));
+      setDeleteOpen(false);
+    } finally {
+      setIsDeleting(false);
     }
-  }, [selectedGoodsId, savedImages]);
+  }, [selectedGoodsId, savedImages, selectedSaved, isDeleting]);
 
   // Выбор/снятие выбора изображения в найденных
-  const toggleImageSelection = (url: string) => {
-    setSelectedImages(prev =>
-      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+  const toggleFound = useCallback((url: string) => {
+    setSelectedImages((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
     );
-  };
+  }, []);
 
-  // Выбрать все найденные
-  const selectAllFound = () => {
-    setSelectedImages(foundImages);
-  };
-
-  // Снять все выбранные
-  const deselectAllFound = () => {
-    setSelectedImages([]);
-  };
+  // Выбор/снятие выбора среди сохранённых
+  const toggleSaved = useCallback((url: string) => {
+    setSelectedSaved((prev) =>
+      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+    );
+  }, []);
 
   // Обработчик изменения количества
   const handleCountChange = (delta: number) => {
-    setImageCount(prev => Math.min(20, Math.max(1, prev + delta)));
+    setImageCount((prev) => Math.min(20, Math.max(1, prev + delta)));
   };
 
-  // Форматирование даты для заглушки (не используется)
-  // Отрисовка placeholder для изображений
-  const getImageAlt = (index: number) => `Инфографика ${index + 1}`;
+  // Блок сохранённых показывается и когда список пуст из-за ошибки или ещё грузится —
+  // иначе баннер ошибки было бы негде отрисовать и сбой снова выглядел бы как «пусто».
+  const showSavedSection =
+    !!selectedGoodsId && (savedImages.length > 0 || savedLoading || !!loadError);
 
   return (
     <div className="space-y-6">
       {/* Заголовок */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Поиск инфографики</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Поиск инфографики</h1>
         <p className="text-gray-600 dark:text-gray-400">
           Найдите и сохраните релевантные изображения для карточек товаров
         </p>
       </div>
 
       {/* Выбор товара и параметры поиска */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-          <div className="flex-1">
-            <label htmlFor="goodsSelect" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Выберите товар
-            </label>
-            <select
-              id="goodsSelect"
-              value={selectedGoodsId}
-              onChange={(e) => setSelectedGoodsId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-              disabled={goodsLoading}
-            >
-              <option value="">-- Выберите товар --</option>
-              {goods.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} {item.article ? `(${item.article})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="count" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Количество:
-            </label>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => handleCountChange(-1)}
-                disabled={imageCount <= 1}
-                className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
-                aria-label="Уменьшить"
-              >
-                <Minus size={16} />
-              </button>
-              <span className="w-10 text-center font-medium text-gray-900 dark:text-white">
-                {imageCount}
-              </span>
-              <button
-                onClick={() => handleCountChange(1)}
-                disabled={imageCount >= 20}
-                className="p-1 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50"
-                aria-label="Увеличить"
-              >
-                <Plus size={16} />
-              </button>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex-1">
+              <FormField id="goodsSelect" label="Выберите товар">
+                {(fieldProps) => (
+                  <Select
+                    {...fieldProps}
+                    value={selectedGoodsId}
+                    onChange={(e) => setSelectedGoodsId(e.target.value)}
+                    disabled={goodsLoading}
+                  >
+                    <option value="">-- Выберите товар --</option>
+                    {goods.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} {item.article ? `(${item.article})` : ''}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </FormField>
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(1–20)</span>
+
+            {/*
+              Раньше «Количество:» было <label htmlFor="count">, но элемента с id="count"
+              на странице нет — счётчик собран из двух кнопок и текста. Ярлык, ни с чем не
+              связанный, вспомогательным технологиям бесполезен, поэтому это группа с
+              aria-labelledby (та же правка, что в задаче 23).
+            */}
+            <div className="flex items-center gap-2" role="group" aria-labelledby="imageCountLabel">
+              <span
+                id="imageCountLabel"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Количество:
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => handleCountChange(-1)}
+                  disabled={imageCount <= 1}
+                  aria-label="Уменьшить количество"
+                >
+                  <Minus size={16} aria-hidden="true" />
+                </Button>
+                <span
+                  className="w-10 text-center font-medium text-gray-900 dark:text-white"
+                  aria-live="polite"
+                >
+                  {imageCount}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => handleCountChange(1)}
+                  disabled={imageCount >= 20}
+                  aria-label="Увеличить количество"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </Button>
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">(1–20)</span>
+            </div>
+
+            <Button
+              onClick={handleSearch}
+              disabled={!selectedGoodsId}
+              isLoading={loading}
+              className="whitespace-nowrap"
+            >
+              {!loading && <Search size={18} className="mr-2" aria-hidden="true" />}
+              {loading ? 'Поиск...' : 'Найти изображения'}
+            </Button>
           </div>
-          <button
-            onClick={handleSearch}
-            disabled={!selectedGoodsId || loading}
-            className="inline-flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Поиск...
-              </>
-            ) : (
-              <>
-                <Search size={18} />
-                Найти изображения
-              </>
-            )}
-          </button>
-        </div>
-        {goodsLoading && <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Загрузка списка товаров...</p>}
-      </div>
+
+          {goodsLoading && (
+            <div
+              className="flex items-center gap-2 mt-2 text-sm text-gray-500 dark:text-gray-400"
+              role="status"
+            >
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              Загрузка списка товаров...
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Уведомления */}
-      {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 flex items-start gap-3">
-          <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
-          <span>{error}</span>
-        </div>
-      )}
-      {success && (
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 flex items-start gap-3">
-          <CheckCircle size={20} className="flex-shrink-0 mt-0.5" />
-          <span>{success}</span>
-        </div>
-      )}
+      {goodsLoadError && <Alert variant="error">{goodsLoadError}</Alert>}
+      {error && <Alert variant="error">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
 
       {/* Сохранённые изображения */}
-      {selectedGoodsId && savedImages.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Сохранённые изображения ({savedImages.length})
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {savedImages.map((url, idx) => (
-              <div key={idx} className="relative group">
-                <img
-                  src={url}
-                  alt={getImageAlt(idx)}
-                  className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                  onError={(e) => (e.currentTarget.src = placeholderImage)}
-                />
-                <button
-                  onClick={() => handleRemoveSaved(url)}
-                  className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
-                  title="Удалить"
+      {showSavedSection && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Сохранённые изображения ({savedImages.length})
+              </h2>
+              {selectedSaved.length > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={isDeleting}
                 >
-                  <Trash2 size={16} />
-                </button>
+                  <Trash2 size={16} className="mr-2" aria-hidden="true" />
+                  Удалить выбранные ({selectedSaved.length})
+                </Button>
+              )}
+            </div>
+
+            {loadError && <Alert variant="error">{loadError}</Alert>}
+
+            {savedLoading && (
+              <div
+                className="flex items-center gap-2 text-gray-500 dark:text-gray-400"
+                role="status"
+              >
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Загрузка сохранённых изображений...
               </div>
-            ))}
-          </div>
-        </div>
+            )}
+
+            {savedImages.length > 0 && (
+              <SelectableImageGrid
+                images={savedImages}
+                selected={selectedSaved}
+                onToggle={toggleSaved}
+                getAlt={(url) => `Инфографика ${savedImages.indexOf(url) + 1}`}
+              />
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Найденные изображения */}
       {foundImages.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Найденные изображения ({foundImages.length})
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={selectAllFound}
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                Выбрать все
-              </button>
-              <button
-                onClick={deselectAllFound}
-                className="text-sm text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
-              >
-                Снять все
-              </button>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Найденные изображения ({foundImages.length})
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedImages(foundImages)}>
+                  Выбрать все
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedImages([])}>
+                  Снять все
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {foundImages.map((url, idx) => {
-              const isSelected = selectedImages.includes(url);
-              return (
-                <div
-                  key={idx}
-                  className={`relative cursor-pointer rounded-lg border-2 transition-all ${
-                    isSelected
-                      ? 'border-purple-500 ring-2 ring-purple-300 dark:ring-purple-700'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
-                  }`}
-                  onClick={() => toggleImageSelection(url)}
-                >
-                  <img
-                    src={url}
-                    alt={getImageAlt(idx)}
-                    className="w-full h-32 object-cover rounded-lg"
-                    onError={(e) => (e.currentTarget.src = placeholderImage)}
-                  />
-                  {isSelected && (
-                    <div className="absolute top-1 right-1 bg-purple-600 text-white rounded-full p-0.5">
-                      <Check size={16} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
 
-          {selectedImages.length > 0 && (
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleSaveSelected}
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Сохранение...
-                  </>
-                ) : (
-                  <>
-                    <Save size={18} />
-                    Сохранить выбранные ({selectedImages.length})
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
+            <SelectableImageGrid
+              images={foundImages}
+              selected={selectedImages}
+              onToggle={toggleFound}
+              getAlt={(url) => `Найденное изображение ${foundImages.indexOf(url) + 1}`}
+            />
+
+            {selectedImages.length > 0 && (
+              <div className="mt-4 flex justify-end">
+                <Button onClick={handleSaveSelected} isLoading={saving}>
+                  {!saving && <Save size={18} className="mr-2" aria-hidden="true" />}
+                  {saving ? 'Сохранение...' : `Сохранить выбранные (${selectedImages.length})`}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Если нет товаров */}
-      {goods.length === 0 && !goodsLoading && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <Package size={48} className="text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-gray-600 dark:text-gray-400">У вас нет товаров.</p>
-          <button
-            onClick={() => window.location.href = '/goods/new'}
-            className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            Добавить товар
-          </button>
-        </div>
+      {/*
+        Пустое состояние гасится при ошибке загрузки товаров: иначе упавший запрос
+        рендерился как «У вас нет товаров» и предлагал завести первый товар
+        пользователю, у которого каталог на самом деле не пуст (задача 23).
+      */}
+      {goods.length === 0 && !goodsLoading && !goodsLoadError && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Package size={48} className="text-gray-300 dark:text-gray-600 mx-auto mb-3" aria-hidden="true" />
+            <p className="text-gray-600 dark:text-gray-400">У вас нет товаров.</p>
+            <Button className="mt-3" onClick={() => navigate('/goods/new')}>
+              Добавить товар
+            </Button>
+          </CardContent>
+        </Card>
       )}
+
+      {/*
+        Диалог не закрывает себя сам (задача 21): закрытие происходит только после
+        того, как запрос завершился, а isLoading блокирует обе кнопки, Escape и
+        клик вне окна.
+      */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteOpen(false);
+        }}
+        title="Удалить выбранные изображения?"
+        description={`Будет удалено изображений: ${selectedSaved.length}. Действие нельзя отменить.`}
+        confirmLabel={isDeleting ? 'Удаление...' : 'Удалить'}
+        isDestructive
+        isLoading={isDeleting}
+        onConfirm={() => void handleRemoveSelected()}
+      />
     </div>
   );
 };

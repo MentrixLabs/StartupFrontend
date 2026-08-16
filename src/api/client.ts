@@ -1,12 +1,11 @@
 import axios, {
   AxiosInstance,
-  AxiosRequestConfig,
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios';
 
 // Базовый URL бэкенда (берётся из переменных окружения)
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mlstartupbackend-mentrixlabs.amvera.io';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Ключ для хранения токена в localStorage
 const TOKEN_KEY = 'access_token';
@@ -14,7 +13,7 @@ const TOKEN_KEY = 'access_token';
 // Создаём экземпляр Axios
 const client: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000, // 10 секунд
+  timeout: 30000, // 30 секунд
   headers: {
     'Content-Type': 'application/json',
   },

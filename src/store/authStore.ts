@@ -1,3 +1,4 @@
+// src/store/authStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '@/api/types';
@@ -7,6 +8,7 @@ import {
   logout as apiLogout,
   getCurrentUser,
 } from '@/api/auth';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface AuthState {
   user: User | null;
@@ -14,8 +16,9 @@ interface AuthState {
   error: string | null;
   isAuthenticated: boolean;
 
+  // Действия
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
   clearError: () => void;
@@ -24,50 +27,50 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isLoading: false,
       error: null,
       isAuthenticated: false,
 
-      login: async (username: string, password: string) => {
+      login: async (email, password) => {
         set({ isLoading: true, error: null });
         try {
-            await apiLogin({ username, password });
-            const user = await getCurrentUser(); // загружаем профиль по токену
-            set({
+          const user = await apiLogin({ email, password });
+          set({
             user,
             isLoading: false,
             error: null,
             isAuthenticated: true,
-            });
-        } catch (error: any) {
-            const detail = error.response?.data?.detail || error.message || 'Ошибка входа';
-            set({
+          });
+        } catch (error) {
+          set({
             isLoading: false,
-            error: typeof detail === 'string' ? detail : JSON.stringify(detail),
+            error: getErrorMessage(error, 'Ошибка входа'),
             isAuthenticated: false,
-            });
-            throw error;
+          });
+          throw error;
         }
       },
 
-      register: async (username: string, email: string, password: string) => {
+      register: async (email, password, fullName) => {
         set({ isLoading: true, error: null });
         try {
-          // 1. Регистрируем пользователя
-          await apiRegister({ username, email, password});
-          
-          // 2. Автоматически логинимся (используем уже существующую функцию login)
-          await get().login(username, password);
-          // После успешного логина состояние уже обновлено в login,
-          // поэтому здесь ничего дополнительно не делаем.
-        } catch (error: any) {
-          // Ошибка может быть как от регистрации, так и от логина
-          const detail = error.response?.data?.detail || error.message || 'Ошибка регистрации';
+          const user = await apiRegister({
+            email,
+            password,
+            full_name: fullName,
+          });
+          set({
+            user,
+            isLoading: false,
+            error: null,
+            isAuthenticated: true,
+          });
+        } catch (error) {
           set({
             isLoading: false,
-            error: typeof detail === 'string' ? detail : JSON.stringify(detail),
+            error: getErrorMessage(error, 'Ошибка регистрации'),
             isAuthenticated: false,
           });
           throw error;
@@ -103,6 +106,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
           });
         } catch (error) {
+          // Токен недействителен
           localStorage.removeItem('access_token');
           set({
             user: null,
@@ -114,11 +118,11 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: 'auth-storage', // ключ для localStorage
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-      }),
+      }), // сохраняем только эти поля
     }
   )
 );

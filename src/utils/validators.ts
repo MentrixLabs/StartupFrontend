@@ -9,7 +9,7 @@ export type ValidationResult = string | null;
 /**
  * Проверяет, что значение не пустое (для строк, массивов, чисел).
  */
-export const validateRequired = (value: any, fieldName: string = 'Поле'): ValidationResult => {
+export const validateRequired = (value: unknown, fieldName: string = 'Поле'): ValidationResult => {
   if (value === undefined || value === null) {
     return `${fieldName} обязательно для заполнения`;
   }
@@ -141,7 +141,7 @@ export const validateMaxLength = (value: string, max: number, fieldName: string 
 /**
  * Проверяет, что значение является числом.
  */
-export const validateNumber = (value: any): ValidationResult => {
+export const validateNumber = (value: unknown): ValidationResult => {
   if (value === undefined || value === null || value === '') {
     return 'Введите число';
   }
@@ -233,10 +233,10 @@ export const validateSafeName = (value: string, fieldName: string = 'Имя'): V
  * Комбинированная проверка: применяет массив валидаторов последовательно.
  * Возвращает первую ошибку, если есть, иначе null.
  */
-export const composeValidators = (
-  ...validators: ((value: any) => ValidationResult)[]
-): ((value: any) => ValidationResult) => {
-  return (value: any): ValidationResult => {
+export const composeValidators = <T>(
+  ...validators: ((value: T) => ValidationResult)[]
+): ((value: T) => ValidationResult) => {
+  return (value: T): ValidationResult => {
     for (const validator of validators) {
       const result = validator(value);
       if (result !== null) {
