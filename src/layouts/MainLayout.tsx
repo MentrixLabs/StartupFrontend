@@ -141,9 +141,9 @@ const MainLayout: React.FC = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-11 w-11 rounded-full p-0 hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all">
                   <Avatar className="h-10 w-10 ring-2 ring-blue-500/20 shadow-apple dark:shadow-apple-dark">
-                    <AvatarImage src={user?.avatar_url || undefined} alt={user?.full_name || 'User'} />
+                    <AvatarImage src={undefined} alt={user?.username || 'User'} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm font-medium">
-                      {user?.full_name?.charAt(0).toUpperCase() || user?.username?.charAt(0).toUpperCase() || 'U'}
+                      {user?.username?.charAt(0).toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
