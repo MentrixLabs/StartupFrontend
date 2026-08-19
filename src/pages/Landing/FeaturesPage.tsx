@@ -151,7 +151,7 @@ const FeaturesPage: React.FC = () => {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <a href="https://t.me/ProskladaiBot" target="_blank" rel="noopener noreferrer">
+                <a href="https://t.me/ProSklad_SmartSeller_AI_Bot" target="_blank" rel="noopener noreferrer">
                   Открыть бота
                 </a>
               </Button>

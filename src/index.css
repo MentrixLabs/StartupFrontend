@@ -41,7 +41,7 @@
 
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #c1c1c6; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb { background: #c1c1c6; border-radius: 20%; }
   ::-webkit-scrollbar-thumb:hover { background: #a0a0a5; }
   * { scrollbar-width: thin; scrollbar-color: #c1c1c6 transparent; }
 
