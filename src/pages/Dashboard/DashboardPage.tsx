@@ -167,7 +167,7 @@ const DashboardPage: React.FC = () => {
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'rgba(255,255,255,0.9)',
-                      borderRadius: '8px',
+                      borderRadius: '20%',
                       border: 'none',
                       boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                     }}
@@ -203,7 +203,7 @@ const DashboardPage: React.FC = () => {
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'rgba(255,255,255,0.9)',
-                      borderRadius: '8px',
+                      borderRadius: '20%',
                       border: 'none',
                       boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                     }}
