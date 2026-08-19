@@ -10,7 +10,7 @@ const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('Root element not found. Check your index.html file.');
 }
-
+document.documentElement.style.transition = 'background-color 0.3s, color 0.3s';
 // Создаём корень React и рендерим приложение
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>

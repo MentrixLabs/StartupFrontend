@@ -10,51 +10,38 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <LandingHeader />
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
+        <div className="container relative z-10 mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 animate-fade-in">
+            Оптимизируйте карточки товаров
+          </h1>
+          <p className="mt-6 text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Генерация SEO-текстов и поиск инфографики с помощью нейросетей.
+          </p>
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            <Button size="lg" className="animate-pulse-glow">
+              Начать бесплатно
+            </Button>
+            <Button variant="outline" size="lg">
+              Попробовать бота
+            </Button>
+          </div>
+        </div>
+      </section>
 
-      {/* ===== HERO SECTION ===== */}
-      <section className="py-16 md:py-24 border-b border-gray-100 dark:border-gray-800">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 tracking-wide uppercase">
-                AI-автоматизация для маркетплейсов
-              </p>
-              <h1 className="max-w-xl">
-                Оптимизируйте карточки товаров{' '}
-                <span className="text-blue-600 dark:text-blue-400">в 2 клика</span>
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-300 max-w-lg leading-relaxed">
-                Генерация SEO-текстов и поиск релевантной инфографики с помощью нейросетей.
-                Увеличьте продажи без лишних затрат.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Button asChild size="lg">
-                  <Link to="/register">
-                    Зарегистрироваться <ArrowRight size={20} className="ml-2" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <a href="https://t.me/ProskladaiBot" target="_blank" rel="noopener noreferrer">
-                    Попробовать бота <ArrowRight size={20} className="ml-2" />
-                  </a>
-                </Button>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle size={16} className="text-green-600" />
-                  Бесплатный пробный период
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle size={16} className="text-green-600" />
-                  Без карты
-                </span>
-              </div>
-            </div>
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-10 text-center">
-              <div className="text-6xl mb-4" aria-hidden="true">📦</div>
-              <h3 className="text-xl">Proskladai Bot</h3>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">SEO + инфографика за секунды</p>
-            </div>
+      // Карточки возможностей (используем GlassCard)
+      <section className="py-24">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-center">Возможности</h2>
+          <div className="mt-16 grid md:grid-cols-3 gap-8">
+            {features.map((feature, i) => (
+              <Card key={i} className="text-center hover:scale-[1.02] transition-transform">
+                <div className="text-4xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-semibold">{feature.title}</h3>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">{feature.description}</p>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

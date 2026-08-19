@@ -1,18 +1,33 @@
 import * as React from "react";
 import { cn } from "@/utils/cn";
 
-export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow transition-shadow",
-        className
-      )}
-      {...props}
-    />
-  )
-);
+//export const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+//  ({ className, ...props }, ref) => (
+//    <div
+//      ref={ref}
+//      className={cn(
+//        "bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 hover:shadow transition-shadow",
+//        className
+//      )}
+//      {...props}
+//    />
+//  )
+//);
+//Card.displayName = "Card";
+
+export const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "glass-card p-6",
+      className
+    )}
+    {...props}
+  />
+));
 Card.displayName = "Card";
 
 export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

@@ -16,14 +16,11 @@ const buttonVariants = cva(
       // background (blue-on-blue for `default`). Pinning the color puts the value on
       // the element itself, where it wins.
       variant: {
-        default: "bg-blue-600 text-white hover:bg-blue-700 hover:text-white",
-        destructive: "bg-red-600 text-white hover:bg-red-700 hover:text-white",
-        outline:
-          "border border-gray-300 bg-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-100",
-        secondary:
-          "bg-gray-200 text-gray-900 hover:bg-gray-300 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-100 dark:hover:text-gray-100",
-        ghost:
-          "text-gray-900 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-100",
+        default: "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-300",
+        destructive: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md hover:shadow-lg",
+        outline: "border border-gray-300/50 dark:border-gray-700/50 bg-transparent backdrop-blur-sm hover:bg-white/10 dark:hover:bg-white/5",
+        secondary: "bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-900 dark:text-white hover:bg-gray-200/90",
+        ghost: "text-gray-900 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-100", // <-- добавьте эту строку
         link: "text-blue-600 hover:underline",
       },
       size: {

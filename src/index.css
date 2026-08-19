@@ -52,3 +52,23 @@
   .dark ::-webkit-scrollbar-thumb:hover { background: #5e5e62; }
   .dark * { scrollbar-color: #4a4a4e transparent; }
 }
+
+/* src/index.css */
+@layer components {
+  .glass-card {
+    @apply bg-white/70 dark:bg-gray-800/80 backdrop-blur-md border border-white/20 dark:border-gray-700/30 shadow-apple dark:shadow-apple-dark rounded-2xl transition-all duration-300;
+  }
+  .glass-card:hover {
+    @apply shadow-apple-hover dark:shadow-apple-dark;
+  }
+  .apple-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  .apple-gradient-dark {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  }
+}
+
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
