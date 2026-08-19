@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, Card, CardContent } from '@/components/ui';
 import LandingHeader from '@/components/landing/LandingHeader';
 import LandingFooter from '@/components/landing/LandingFooter';
 
@@ -10,6 +10,8 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <LandingHeader />
+
+      {/* ===== HERO ===== */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50/50 via-white to-purple-50/50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
         <div className="container relative z-10 mx-auto px-4 text-center">
@@ -30,23 +32,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      // Карточки возможностей (используем GlassCard)
-      <section className="py-24">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-5xl font-bold text-center">Возможности</h2>
-          <div className="mt-16 grid md:grid-cols-3 gap-8">
-            {features.map((feature, i) => (
-              <Card key={i} className="text-center hover:scale-[1.02] transition-transform">
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold">{feature.title}</h3>
-                <p className="mt-2 text-gray-500 dark:text-gray-400">{feature.description}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== FEATURES SECTION ===== */}
+      {/* ===== FEATURES (нумерованный список) ===== */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mb-16">
@@ -74,7 +60,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ===== HOW IT WORKS ===== */}
+      {/* ===== HOW IT WORKS (стеклянные карточки) ===== */}
       <section className="py-16 md:py-24 border-t border-gray-100 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mb-16">
@@ -85,15 +71,20 @@ const HomePage: React.FC = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {steps.map((step, index) => (
-              <div key={step.title}>
-                <span className="text-sm font-medium text-gray-500">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <h3 className="text-xl mt-2">{step.title}</h3>
-                <p className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
+              <Card
+                key={step.title}
+                className="glass-card hover:shadow-apple-hover dark:hover:shadow-apple-dark transition-all duration-300"
+              >
+                <CardContent className="p-6 text-center">
+                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <h3 className="text-xl mt-3 font-semibold">{step.title}</h3>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {step.description}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -115,7 +106,7 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ===== CTA SECTION ===== */}
+      {/* ===== CTA ===== */}
       <section className="py-16 md:py-24 border-t border-gray-100 dark:border-gray-800">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-2xl mx-auto">
@@ -144,7 +135,7 @@ const HomePage: React.FC = () => {
   );
 };
 
-// Данные для секций
+// Данные
 const features = [
   {
     title: 'Генерация SEO-текстов',
