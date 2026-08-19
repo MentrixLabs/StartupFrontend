@@ -26,9 +26,11 @@ module.exports = {
         'apple-hover': '0 8px 30px rgba(0,0,0,0.12)',
       },
       borderRadius: {
-        xl: '1rem',
-        '2xl': '1.5rem',
-        '3xl': '2rem',
+        DEFAULT: '0.75rem',   // 12px – единый радиус для кнопок и полей
+        lg: '0.75rem',        // если где-то используется rounded-lg, тоже 12px
+        xl: '1rem',           // опционально
+        '2xl': '1.5rem',      // опционально
+        '3xl': '2rem',        // опционально
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
