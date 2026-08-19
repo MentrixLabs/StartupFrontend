@@ -26,7 +26,6 @@
   a { @apply text-blue-600 transition-colors duration-200; }
   a:hover { @apply text-blue-700; }
 
-  /* Single global focus-visible treatment — the safety net for every interactive element */
   :focus-visible {
     @apply outline-none ring-2 ring-blue-500 ring-offset-2;
   }
@@ -53,7 +52,6 @@
   .dark * { scrollbar-color: #4a4a4e transparent; }
 }
 
-/* src/index.css */
 @layer components {
   .glass-card {
     @apply bg-white/70 dark:bg-gray-800/80 backdrop-blur-md border border-white/20 dark:border-gray-700/30 shadow-apple dark:shadow-apple-dark rounded-2xl transition-all duration-300;

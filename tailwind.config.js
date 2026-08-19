@@ -1,10 +1,14 @@
 // tailwind.config.js
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
-        // Добавляем полупрозрачные варианты для стеклянных карточек
         glass: {
           light: 'rgba(255,255,255,0.7)',
           dark: 'rgba(30,30,30,0.8)',
@@ -17,14 +21,14 @@ module.exports = {
         lg: '16px',
       },
       boxShadow: {
-        'apple': '0 4px 20px rgba(0,0,0,0.08)',
+        apple: '0 4px 20px rgba(0,0,0,0.08)',
         'apple-dark': '0 4px 30px rgba(0,0,0,0.3)',
         'apple-hover': '0 8px 30px rgba(0,0,0,0.12)',
       },
       borderRadius: {
-        'xl': '1rem',    // 16px
-        '2xl': '1.5rem', // 24px
-        '3xl': '2rem',   // 32px
+        xl: '1rem',
+        '2xl': '1.5rem',
+        '3xl': '2rem',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
@@ -48,4 +52,5 @@ module.exports = {
       },
     },
   },
+  plugins: [],
 };
