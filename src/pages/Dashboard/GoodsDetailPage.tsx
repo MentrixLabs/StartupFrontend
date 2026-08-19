@@ -1,10 +1,11 @@
 // src/pages/Dashboard/GoodsDetailPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { SelectableImageGrid } from '@/components/ui';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGoods } from '@/hooks/useGoods';
 import type { GoodsItem, SeoDataResponse, SeoHistoryResponse } from '@/api/types';
 import { generateSeo, getSeoHistory } from '@/api/seo';
-import { searchInfographics, saveInfographicsToGoods } from '@/api/infographics';
+import { generateInfographics, getInfographicsByGoodsId, enhanceInfographics } from '@/api/infographics';
 import { Alert, Button, Card, CardContent } from '@/components/ui';
 import {
   ArrowLeft,
@@ -14,6 +15,7 @@ import {
   BarChart3,
   Loader2,
   Sparkles,
+  Wand2,
   Save,
   Search,
   CheckCircle,
@@ -54,7 +56,7 @@ const InfoTab: React.FC<{ goodsItem: GoodsItem }> = ({ goodsItem }) => {
         </div>
         <div>
           <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Артикул (ID)</dt>
-          <dd className="mt-1 text-gray-900 dark:text-white">{goodsItem.product_id || '—'}</dd>
+          <dd className="mt-1 text-gray-900 dark:text-white">{goodsItem.id || '—'}</dd>
         </div>
         <div>
           <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Бренд</dt>
@@ -288,151 +290,110 @@ const InfographicsTab: React.FC<{ goodsItem: GoodsItem; onUpdate?: () => void }>
   goodsItem,
   onUpdate,
 }) => {
-  const goodsId = goodsItem.id;
-  const [foundImages, setFoundImages] = useState<string[]>([]);
+  const goodsId = goodsItem.id; // string
+
+  const [savedImages, setSavedImages] = useState<string[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const allImages = [...(goodsItem.main_imgs || []), ...(goodsItem.desc_imgs || [])];
+  // Загрузка сохранённых изображений при монтировании
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await getInfographicsByGoodsId(goodsId);
+        const all = [...(data.generated_images || []), ...(data.enhanced_images || [])];
+        setSavedImages(all);
+        setSelectedImages([]);
+      } catch (err) {
+        console.error('Ошибка загрузки инфографики:', err);
+      }
+    };
+    load();
+  }, [goodsId]);
 
-  const handleSearch = async () => {
+  // Генерация новых изображений (Kandinsky)
+  const handleGenerate = async (count = 4) => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
-      const result = await searchInfographics({ goods_id: goodsId, count: 20 });
-      setFoundImages(result.images || []);
-      setSelectedImages([]);
+      const result = await generateInfographics({ goods_id: Number(goodsId), count });
+      setGeneratedImages(result.images);
+      // После генерации обновляем сохранённые (они уже сохранились на бэкенде)
+      const updated = await getInfographicsByGoodsId(goodsId);
+      const all = [...(updated.generated_images || []), ...(updated.enhanced_images || [])];
+      setSavedImages(all);
+      setSuccess(`Сгенерировано ${result.images.length} изображений`);
+      if (onUpdate) onUpdate();
     } catch (err) {
-      setError(getErrorMessage(err, 'Ошибка поиска инфографики'));
+      setError(getErrorMessage(err, 'Ошибка генерации инфографики'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
-    if (selectedImages.length === 0) return;
+  // Улучшение (коллаж + текст)
+  const handleEnhance = async () => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
-      await saveInfographicsToGoods(goodsId, selectedImages);
-      setFoundImages([]);
-      setSelectedImages([]);
-      if (onUpdate) onUpdate(); // обновить данные товара
+      await enhanceInfographics(goodsId);
+      // Обновляем сохранённые
+      const updated = await getInfographicsByGoodsId(goodsId);
+      const all = [...(updated.generated_images || []), ...(updated.enhanced_images || [])];
+      setSavedImages(all);
+      setSuccess('Изображения улучшены');
+      if (onUpdate) onUpdate();
     } catch (err) {
-      setError(getErrorMessage(err, 'Ошибка сохранения инфографики'));
+      setError(getErrorMessage(err, 'Ошибка улучшения инфографики'));
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleImage = (url: string) => {
+  const toggleSelect = (url: string) => {
     setSelectedImages((prev) =>
       prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
     );
   };
 
+  const allImages = savedImages;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Инфографика</h3>
-        <Button onClick={handleSearch} isLoading={loading} variant="secondary">
-          {!loading && <Search size={18} className="mr-2" aria-hidden="true" />}
-          {loading ? 'Поиск...' : 'Найти изображения'}
+      <div className="flex flex-wrap items-center gap-4">
+        <Button onClick={() => handleGenerate(4)} isLoading={loading}>
+          {!loading && <Sparkles size={18} className="mr-2" aria-hidden="true" />}
+          {loading ? 'Генерация...' : 'Сгенерировать'}
+        </Button>
+        <Button variant="outline" onClick={handleEnhance} isLoading={loading}>
+          {!loading && <Wand2 size={18} className="mr-2" aria-hidden="true" />}
+          Улучшить
         </Button>
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
 
-      {/* Сохранённые изображения */}
+      {allImages.length === 0 && !loading && (
+        <p className="text-gray-500 dark:text-gray-400">Нет сохранённой инфографики. Нажмите «Сгенерировать».</p>
+      )}
+
       {allImages.length > 0 && (
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Сохранённые изображения ({allImages.length})
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {allImages.map((url, idx) => (
-              <div key={idx} className="relative">
-                <img
-                  src={url}
-                  alt={`Изображение ${idx + 1}`}
-                  className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                  onError={(e) => (e.currentTarget.src = placeholderImage)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Результаты поиска */}
-      {foundImages.length > 0 && (
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Найдено изображений: {foundImages.length}
-            </h4>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedImages(foundImages)}
-              >
-                Выбрать все
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedImages([])}
-              >
-                Снять все
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {foundImages.map((url, idx) => {
-              const isSelected = selectedImages.includes(url);
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => toggleImage(url)}
-                  className={`relative rounded-lg border-2 transition-all ${
-                    isSelected
-                      ? 'border-blue-500 ring-2 ring-blue-300 dark:ring-blue-700'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
-                  }`}
-                >
-                  <img
-                    src={url}
-                    alt={`Найденное ${idx + 1}`}
-                    className="w-full h-32 object-cover rounded-lg"
-                    onError={(e) => (e.currentTarget.src = placeholderImage)}
-                  />
-                  {isSelected && (
-                    <span className="absolute top-1 right-1 bg-blue-600 text-white rounded-full p-0.5">
-                      <CheckCircle size={16} aria-hidden="true" />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {selectedImages.length > 0 && (
-            <div className="mt-4 flex justify-end">
-              <Button onClick={handleSave} isLoading={loading}>
-                {!loading && <Save size={18} className="mr-2" aria-hidden="true" />}
-                Сохранить выбранные ({selectedImages.length})
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {allImages.length === 0 && foundImages.length === 0 && !loading && (
-        <p className="text-gray-500 dark:text-gray-400">
-          Нет сохранённой инфографики. Используйте поиск, чтобы найти изображения.
-        </p>
+        <Card>
+          <CardContent className="p-4">
+            <SelectableImageGrid
+              images={allImages}
+              selected={selectedImages}
+              onToggle={toggleSelect}
+              getAlt={(url) => `Инфографика ${url.slice(0, 10)}`}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
   );
@@ -546,7 +507,7 @@ const GoodsDetailPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{goodsItem.name}</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Артикул: {goodsItem.product_id || '—'} • Категория: {goodsItem.category || '—'} • Цена:{' '}
+            Артикул: {goodsItem.id || '—'} • Категория: {goodsItem.category || '—'} • Цена:{' '}
             {goodsItem.price ? `${goodsItem.price} ₽` : '—'}
           </p>
         </div>

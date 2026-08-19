@@ -2,11 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useGoods } from '@/hooks/useGoods';
-import {
-  generateSeo,
-  getSeoHistory,
-} from '@/api/seo';
-import type { SeoGenerationResponse } from '@/api/types';
+import { generateSeo, getSeoHistory } from '@/api/seo';
+import type { SeoGenerationResponse, SeoHistoryResponse } from '@/api/types';
 import {
   Alert,
   Badge,
@@ -16,13 +13,8 @@ import {
   FormField,
   Select,
 } from '@/components/ui';
-import { Sparkles, Save, Loader2, Package } from 'lucide-react';
+import { Sparkles, Loader2, Package } from 'lucide-react';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-
-// Определяем тип для истории, который может быть массивом или объектом
-// Если getSeoHistory возвращает массив, то всё работает
-// Если возвращает объект с полем generated, то нужно извлекать его
-// В дизайн-версии используется как массив, поэтому оставляем так
 
 const SeoGenerationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -34,9 +26,8 @@ const SeoGenerationPage: React.FC = () => {
   const [selectedGoodsId, setSelectedGoodsId] = useState<string>(goodsIdFromUrl || '');
 
   const [generatedSeo, setGeneratedSeo] = useState<SeoGenerationResponse | null>(null);
-  const [seoHistory, setSeoHistory] = useState<SeoGenerationResponse[]>([]);
+  const [seoHistory, setSeoHistory] = useState<SeoHistoryResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [historyLoadError, setHistoryLoadError] = useState<string | null>(null);
@@ -45,7 +36,7 @@ const SeoGenerationPage: React.FC = () => {
   // Загрузка истории SEO при выборе товара
   useEffect(() => {
     if (!selectedGoodsId) {
-      setSeoHistory([]);
+      setSeoHistory(null);
       setGeneratedSeo(null);
       setHistoryLoadError(null);
       setHistoryLoading(false);
@@ -59,15 +50,11 @@ const SeoGenerationPage: React.FC = () => {
       try {
         const history = await getSeoHistory(selectedGoodsId);
         if (cancelled) return;
-        // Если getSeoHistory возвращает массив, используем его напрямую
-        // Если возвращает объект с полем generated, раскомментируйте строку ниже
-        // const historyArray = Array.isArray(history) ? history : (history as any).generated || [];
-        // setSeoHistory(historyArray);
-        setSeoHistory(history as SeoGenerationResponse[]); // Приводим тип, если уверены
-        setGeneratedSeo(history.length > 0 ? history[0] : null);
+        setSeoHistory(history);
+        setGeneratedSeo(history.generated || null);
       } catch (err) {
         if (cancelled) return;
-        setSeoHistory([]);
+        setSeoHistory(null);
         setGeneratedSeo(null);
         setHistoryLoadError(getErrorMessage(err, 'Не удалось загрузить историю SEO'));
       } finally {
@@ -94,7 +81,7 @@ const SeoGenerationPage: React.FC = () => {
       setGeneratedSeo(result);
       // Обновляем историю
       const history = await getSeoHistory(selectedGoodsId);
-      setSeoHistory(history as SeoGenerationResponse[]);
+      setSeoHistory(history);
       setSuccess('SEO успешно сгенерировано');
     } catch (err) {
       setError(getErrorMessage(err, 'Ошибка генерации SEO'));
@@ -102,13 +89,6 @@ const SeoGenerationPage: React.FC = () => {
       setLoading(false);
     }
   }, [selectedGoodsId]);
-
-  // Сохранение SEO – убрано, так как saveSeoToGoods не существует
-  // Вместо этого просто показываем сообщение, что сохранение не требуется,
-  // или можно оставить кнопку, которая ничего не делает, но в дизайне она есть.
-  // Мы её уберём, так как в реальности сохранение происходит автоматически при генерации.
-  // Если нужна кнопка "Сохранить", то её можно убрать совсем или использовать как
-  // заглушку для обновления истории.
 
   return (
     <div className="space-y-6">
@@ -134,7 +114,7 @@ const SeoGenerationPage: React.FC = () => {
                     <option value="">-- Выберите товар --</option>
                     {goods.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.name} {item.article ? `(${item.article})` : ''}
+                        {item.name} {item.id ? `(${item.id})` : ''}
                       </option>
                     ))}
                   </Select>
@@ -167,18 +147,14 @@ const SeoGenerationPage: React.FC = () => {
       {selectedGoodsId && (
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Сгенерированный SEO
-              </h2>
-              {/* Кнопка сохранения убрана, так как saveSeoToGoods не существует */}
-              {/* Если нужно, можно оставить заглушку, но в дизайне она есть, хотя логика не реализована */}
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Сгенерированный SEO
+            </h2>
 
             {historyLoadError && <Alert variant="error">{historyLoadError}</Alert>}
 
             {generatedSeo ? (
-              <dl className="space-y-4">
+              <dl className="space-y-4 mt-4">
                 <div>
                   <dt className="block text-sm font-medium text-gray-700 dark:text-gray-300">Заголовок</dt>
                   <dd className="mt-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded text-gray-900 dark:text-white">
@@ -214,42 +190,47 @@ const SeoGenerationPage: React.FC = () => {
                 </p>
               )
             )}
-          </CardContent>
-        </Card>
-      )}
 
-      {selectedGoodsId && seoHistory.length > 0 && (
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              История генераций ({seoHistory.length})
-            </h2>
-            <ul className="space-y-3 max-h-80 overflow-y-auto">
-              {seoHistory.map((item, index) => (
-                <li
-                  key={`${item.title}-${index}`}
-                  className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded border border-gray-200 dark:border-gray-600"
-                >
-                  <p className="font-medium text-gray-900 dark:text-white">{item.title}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{item.description}</p>
-                  <div className="flex flex-wrap items-center gap-1 mt-1">
-                    {item.keywords.slice(0, 3).map((kw, idx) => (
-                      <Badge key={`${kw}-${idx}`}>{kw}</Badge>
-                    ))}
-                    {item.keywords.length > 3 && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        +{item.keywords.length - 3}
-                      </span>
-                    )}
-                  </div>
-                  {index === 0 && (
-                    <Badge variant="success" className="mt-2">
-                      Последний
-                    </Badge>
-                  )}
-                </li>
-              ))}
-            </ul>
+            {seoHistory?.summary && (
+              <div className="mt-6">
+                <dt className="block text-sm font-medium text-gray-700 dark:text-gray-300">Сводка</dt>
+                <dd className="mt-1 p-3 bg-gray-50 dark:bg-gray-700/50 rounded text-gray-900 dark:text-white">
+                  {seoHistory.summary}
+                </dd>
+              </div>
+            )}
+
+            {seoHistory?.competitors && seoHistory.competitors.length > 0 && (
+              <div className="mt-6">
+                <dt className="block text-sm font-medium text-gray-700 dark:text-gray-300">Конкуренты</dt>
+                <div className="mt-2 space-y-2">
+                  {seoHistory.competitors.map((comp, idx) => (
+                    <div key={idx} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded">
+                      <p className="font-medium text-gray-900 dark:text-white">{comp.title}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{comp.description}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {comp.keywords.slice(0, 3).map((kw, i) => (
+                          <Badge key={i} variant="neutral">{kw}</Badge>
+                        ))}
+                        {comp.keywords.length > 3 && (
+                          <span className="text-xs text-gray-500">+{comp.keywords.length - 3}</span>
+                        )}
+                      </div>
+                      {comp.url && (
+                        <a
+                          href={comp.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 text-xs hover:underline"
+                        >
+                          Ссылка
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

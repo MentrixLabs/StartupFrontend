@@ -1,7 +1,7 @@
 // src/pages/Dashboard/GoodsDetail/SeoTab.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { generateSeo, getSeoHistory } from '@/api/seo';
-import type { GoodsItem, SeoGenerationResponse } from '@/api/types';
+import type { GoodsItem, SeoGenerationResponse, SeoHistoryResponse } from '@/api/types';
 import { Alert, Badge, Button } from '@/components/ui';
 import { Loader2, Save, Sparkles, CheckCircle } from 'lucide-react';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -13,7 +13,7 @@ interface SeoTabProps {
 const SeoTab: React.FC<SeoTabProps> = ({ goodsItem }) => {
   const goodsId = goodsItem.id;
 
-  const [seoHistory, setSeoHistory] = useState<SeoGenerationResponse[]>([]);
+  const [seoHistory, setSeoHistory] = useState<SeoHistoryResponse | null>(null);
   const [generatedSeo, setGeneratedSeo] = useState<SeoGenerationResponse | null>(null);
   const [seoLoading, setSeoLoading] = useState<boolean>(false);
   const [seoError, setSeoError] = useState<string | null>(null);
@@ -31,8 +31,10 @@ const SeoTab: React.FC<SeoTabProps> = ({ goodsItem }) => {
         const history = await getSeoHistory(goodsId);
         if (cancelled) return;
         setSeoHistory(history);
-        if (history.length > 0) {
-          setGeneratedSeo(history[0]); // последний
+        if (history.generated) {
+          setGeneratedSeo(history.generated);
+        } else {
+          setGeneratedSeo(null);
         }
       } catch (err) {
         if (cancelled) return;
@@ -55,7 +57,7 @@ const SeoTab: React.FC<SeoTabProps> = ({ goodsItem }) => {
     try {
       const result = await generateSeo({ goods_id: goodsId });
       setGeneratedSeo(result);
-      // Обновляем историю (сохранение на бэкенде не требуется)
+      // Обновляем историю
       const history = await getSeoHistory(goodsId);
       setSeoHistory(history);
       setSuccess('SEO успешно сгенерировано');
@@ -73,7 +75,6 @@ const SeoTab: React.FC<SeoTabProps> = ({ goodsItem }) => {
     setSeoError(null);
     setSuccess(null);
     try {
-      // Реальное сохранение отсутствует – просто обновляем историю
       const history = await getSeoHistory(goodsId);
       setSeoHistory(history);
       setSuccess('SEO сохранено (имитация)');
@@ -146,17 +147,40 @@ const SeoTab: React.FC<SeoTabProps> = ({ goodsItem }) => {
         !loadError && <p className="text-gray-500 dark:text-gray-400">SEO ещё не сгенерировано.</p>
       )}
 
-      {/* История SEO */}
-      {seoHistory.length > 1 && (
-        <section className="mt-8">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">История генераций</h3>
+      {/* Сводка и конкуренты */}
+      {seoHistory?.summary && (
+        <section className="mt-6">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Сводка</h3>
+          <p className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded text-sm text-gray-600 dark:text-gray-400">
+            {seoHistory.summary}
+          </p>
+        </section>
+      )}
+
+      {seoHistory?.competitors && seoHistory.competitors.length > 0 && (
+        <section className="mt-6">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Конкуренты</h3>
           <ul className="space-y-2 max-h-60 overflow-y-auto">
-            {seoHistory.slice(1).map((item, idx) => (
-              <li
-                key={`${item.title}-${idx}`}
-                className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded text-sm text-gray-500 dark:text-gray-400"
-              >
-                Заголовок: {item.title}
+            {seoHistory.competitors.map((comp, idx) => (
+              <li key={idx} className="p-3 bg-gray-50 dark:bg-gray-700/30 rounded text-sm">
+                <p className="font-medium text-gray-900 dark:text-white">{comp.title}</p>
+                <p className="text-gray-500 dark:text-gray-400">{comp.description}</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {comp.keywords.slice(0, 3).map((kw, i) => (
+                    <Badge key={i} variant="neutral">{kw}</Badge>
+                  ))}
+                  {comp.keywords.length > 3 && <span className="text-xs text-gray-500">+{comp.keywords.length - 3}</span>}
+                </div>
+                {comp.url && (
+                  <a
+                    href={comp.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 text-xs hover:underline"
+                  >
+                    Ссылка
+                  </a>
+                )}
               </li>
             ))}
           </ul>

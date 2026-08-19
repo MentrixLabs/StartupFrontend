@@ -93,3 +93,61 @@ export interface Report {
   infographics?: string[];
   // другие поля
 }
+
+/**
+ * Данные инфографики для товара (хранятся в БД)
+ */
+export interface InfographicsData {
+  generated_images: string[];   // сгенерированные Kandinsky
+  enhanced_images: string[];    // улучшенные (коллаж + текст)
+}
+
+/**
+ * Запрос на генерацию инфографики
+ */
+export interface InfographicsGenerateRequest {
+  goods_id: number;
+  count?: number;               // количество изображений (по умолчанию 4)
+}
+
+/**
+ * Ответ от генерации инфографики
+ */
+export interface InfographicsGenerateResponse {
+  images: string[];             // массив data-url или ссылок
+}
+
+/**
+ * Ответ от улучшения инфографики
+ */
+export interface InfographicsEnhanceResponse {
+  enhanced: string[];           // массив улучшенных изображений
+}
+
+// ==================== ТИПЫ ДЛЯ СТАТИСТИКИ ====================
+
+/**
+ * Распределение контента (используется на дашборде)
+ */
+export interface ContentDistribution {
+  seo: number;                  // количество товаров с SEO
+  infographics: number;         // количество товаров с инфографикой
+  reports: number;              // количество отчётов (пока заглушка)
+}
+
+/**
+ * Недельная активность (для графика)
+ */
+export interface WeeklyActivity {
+  day: string;                  // "Mon", "Tue"...
+  seo: number;
+  infographics: number;
+}
+
+/**
+ * Рекомендации на неделю
+ */
+export interface Recommendation {
+  target_seo: number;
+  target_infographics: number;
+}

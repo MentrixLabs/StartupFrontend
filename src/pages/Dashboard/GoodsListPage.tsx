@@ -218,7 +218,7 @@ const GoodsListPage: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-300">
-                    {item.article || '—'}
+                    {item.id || '—'}
                   </TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-300">
                     {item.price ? `${item.price} ₽` : '—'}

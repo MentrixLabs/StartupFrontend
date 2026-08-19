@@ -7,7 +7,6 @@ import {
   createGoods,
   updateGoods,
   deleteGoods,
-  parseGoodsByArticle,
 } from '@/api/goods';
 
 interface GoodsState {
@@ -140,10 +139,10 @@ export const useGoodsStore = create<GoodsState>((set) => ({
     }
   },
 
-  parseByArticle: async (article) => {
+  parseByArticle: async (id) => {
     set({ isLoading: true, error: null });
     try {
-      const parsed = await parseGoodsByArticle(article);
+      const parsed = await getGoodsById(id);
       set((state) => ({
         goods: [parsed, ...state.goods],
         total: state.total + 1,

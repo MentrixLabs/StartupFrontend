@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSeoHistory } from '@/api/seo';
-import { getGoodsInfographics } from '@/api/infographics';
+import { getInfographicsByGoodsId } from '@/api/infographics'; // изменён импорт
 import type { GoodsItem } from '@/api/types';
 import { Alert, Badge, Button } from '@/components/ui';
 import { BarChart3, Loader2 } from 'lucide-react';
@@ -12,12 +12,6 @@ interface ReportsTabProps {
   goodsItem: GoodsItem;
 }
 
-/**
- * Вкладка «Отчёты». Счётчики SEO-генераций и инфографики раньше читались из
- * состояния родителя, которое загружалось независимо от активной вкладки. После
- * разделения состояние живёт в своих вкладках, поэтому эта вкладка запрашивает
- * два счётчика сама — так сводка остаётся такой же, как до рефакторинга.
- */
 const ReportsTab: React.FC<ReportsTabProps> = ({ goodsItem }) => {
   const navigate = useNavigate();
   const goodsId = goodsItem.id;
@@ -25,8 +19,6 @@ const ReportsTab: React.FC<ReportsTabProps> = ({ goodsItem }) => {
   const [seoCount, setSeoCount] = useState<number | null>(null);
   const [infographicsCount, setInfographicsCount] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  // Без этого флага сводка печатала «—», что одинаково читалось и как «ещё грузим»,
-  // и как «действительно ноль».
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -35,13 +27,29 @@ const ReportsTab: React.FC<ReportsTabProps> = ({ goodsItem }) => {
       setInitialLoading(true);
       setLoadError(null);
       try {
-        const [history, images] = await Promise.all([
-          getSeoHistory(goodsId),
-          getGoodsInfographics(goodsId),
+        const [history, infographicsData] = await Promise.all([
+          getSeoHistory(goodsId),           // преобразование к числу
+          getInfographicsByGoodsId(goodsId), // изменённая функция
         ]);
         if (cancelled) return;
-        setSeoCount(history.length);
-        setInfographicsCount(images.length);
+        // Для SEO-истории ожидаем массив (SeoHistoryResponse), но у нас её тип может быть массив или объект.
+        // Поскольку в реальности getSeoHistory возвращает объект с полем generated, надо проверять.
+        // Предположим, что getSeoHistory возвращает массив (как в старом коде), но на самом деле она возвращает объект SeoHistoryResponse.
+        // В текущем коде ReportsTab ожидает history.length, т.е. массив. Но в новом API getSeoHistory возвращает объект.
+        // Нужно адаптировать: возможно, нам нужно получать количество записей через history.generated ? 1 : 0 или history.competitors.length.
+        // Для простоты, если getSeoHistory возвращает объект с полем generated, то считаем, что если есть generated, то SEO есть.
+        // Мы можем определить количество генераций как 1, если generated не null, иначе 0.
+        // Однако в бэкенде /seo/history/{goods_id} возвращает { generated: {...} | null, summary: ..., competitors: [] }.
+        // Так что мы должны проверить history.generated.
+        // Для совместимости с предыдущим кодом, который ждал массив, мы можем адаптировать.
+        // Предлагаю считать количество генераций: если history.generated !== null, то 1, иначе 0.
+        // Но в будущем можно хранить историю с датами, но пока оставим так.
+        const seoCountValue = history.generated ? 1 : 0;
+        setSeoCount(seoCountValue);
+        // Инфографика: у нас есть массив generated_images и enhanced_images. Считаем общее количество.
+        const infographicsImages = infographicsData.generated_images?.length || 0;
+        const enhancedImages = infographicsData.enhanced_images?.length || 0;
+        setInfographicsCount(infographicsImages + enhancedImages);
       } catch (err) {
         if (cancelled) return;
         setLoadError(getErrorMessage(err, 'Не удалось загрузить сводку по товару'));
@@ -78,8 +86,6 @@ const ReportsTab: React.FC<ReportsTabProps> = ({ goodsItem }) => {
           Загрузка сводки...
         </div>
       ) : (
-        // Счётчики рендерятся только после успешной загрузки, поэтому число здесь
-        // всегда настоящее — «0» означает ноль, а не «ещё не знаем».
         !loadError && (
           <div className="flex flex-wrap gap-2">
             <Badge variant="neutral">SEO-генераций: {seoCount ?? 0}</Badge>

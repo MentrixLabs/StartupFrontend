@@ -44,6 +44,13 @@ const DashboardPage: React.FC = () => {
 
   // Загрузка всех данных
   useEffect(() => {
+    // В useEffect DashboardPage
+    const [contentDist, setContentDist] = useState({ seo: 0, infographics: 0, reports: 0 });
+
+    const loadStats = async () => {
+      const distribution = await getContentDistribution();
+      setContentDist(distribution);
+    };
     const loadData = async () => {
       setLoading(true);
       setError(null);
