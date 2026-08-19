@@ -32,24 +32,39 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
-        try {
-            await apiLogin({ username, password });
-            const user = await getCurrentUser(); // загружаем профиль по токену
-            set({
-            user,
-            isLoading: false,
-            error: null,
-            isAuthenticated: true,
-            });
-        } catch (error: any) {
-            const detail = error.response?.data?.detail || error.message || 'Ошибка входа';
-            set({
-            isLoading: false,
-            error: typeof detail === 'string' ? detail : JSON.stringify(detail),
-            isAuthenticated: false,
-            });
-            throw error;
-        }
+        // Имитация задержки
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const mockUser = { 
+          id: '1', 
+          username: username || 'test', 
+          email: 'test@test.com',
+          created_at: new Date().toISOString()
+        };
+        set({
+          user: mockUser,
+          isLoading: false,
+          error: null,
+          isAuthenticated: true,
+        });
+        //set({ isLoading: true, error: null });
+        //try {
+        //    await apiLogin({ username, password });
+        //    const user = await getCurrentUser(); // загружаем профиль по токену
+        //    set({
+        //    user,
+        //    isLoading: false,
+        //    error: null,
+        //    isAuthenticated: true,
+        //    });
+        //} catch (error: any) {
+        //    const detail = error.response?.data?.detail || error.message || 'Ошибка входа';
+        //    set({
+        //    isLoading: false,
+        //    error: typeof detail === 'string' ? detail : JSON.stringify(detail),
+        //    isAuthenticated: false,
+        //    });
+        //    throw error;
+        //}
       },
 
       register: async (username: string, email: string, password: string) => {
@@ -88,6 +103,9 @@ export const useAuthStore = create<AuthState>()(
       clearError: () => set({ error: null }),
 
       loadUser: async () => {
+        const mockUser = { id: '1', username: 'test', email: 'test@test.com', created_at: new Date().toISOString() };
+        set({ user: mockUser, isAuthenticated: true, isLoading: false });
+        return;
         const token = localStorage.getItem('access_token');
         if (!token) {
           set({ user: null, error: null, isAuthenticated: false });

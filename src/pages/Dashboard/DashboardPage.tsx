@@ -32,7 +32,8 @@ const COLORS = ['#3b82f6', '#8b5cf6', '#10b981'];
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { goods, loading: goodsLoading, fetchGoods } = useGoods();
+  // ВРЕМЕННО: заглушка вместо useGoods
+const { goods, loading: goodsLoading, fetchGoods } = useGoods();
 
   // Состояния для данных
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityItem[]>([]);
@@ -44,13 +45,7 @@ const DashboardPage: React.FC = () => {
 
   // Загрузка всех данных
   useEffect(() => {
-    // В useEffect DashboardPage
-    const [contentDist, setContentDist] = useState({ seo: 0, infographics: 0, reports: 0 });
-
-    const loadStats = async () => {
-      const distribution = await getContentDistribution();
-      setContentDist(distribution);
-    };
+    
     const loadData = async () => {
       setLoading(true);
       setError(null);

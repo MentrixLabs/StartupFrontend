@@ -29,6 +29,7 @@ import GoodsCreatePage from '@/pages/Dashboard/GoodsCreatePage';
 
 // Компонент для защищённых маршрутов
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  
   const { isAuthenticated, isLoading } = useAuthStore();
 
   if (isLoading) {

@@ -1,13 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
-import {
-  getGoodsList,
-  getGoodsById,
-  createGoods,
-  updateGoods,
-  deleteGoods,
-  // parseGoodsByArticle, // удалено
-} from '@/api/goods';
-import type { GoodsItem, PaginatedResponse } from '@/api/types';
+// src/hooks/useGoods.ts
+import { useGoodsStore } from '@/store/goodsStore';
+import type { GoodsItem } from '@/api/types';
 
 interface UseGoodsReturn {
   goods: GoodsItem[];
@@ -22,131 +15,35 @@ interface UseGoodsReturn {
   addGoods: (data: Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>) => Promise<GoodsItem>;
   updateGoods: (id: string, data: Partial<Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>>) => Promise<GoodsItem>;
   removeGoods: (id: string) => Promise<void>;
-  // parseByArticle: (article: string) => Promise<GoodsItem>; // удалено
 }
 
-export const useGoods = (initialPage = 1, initialSize = 20): UseGoodsReturn => {
-  const [goods, setGoods] = useState<GoodsItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: initialPage,
-    size: initialSize,
-    pages: 0,
-  });
-
-  const fetchGoods = useCallback(
-    async (page: number = initialPage, size: number = initialSize) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response: PaginatedResponse<GoodsItem> = await getGoodsList(page, size);
-        setGoods(response.items);
-        setPagination({
-          total: response.total,
-          page: response.page,
-          size: response.size,
-          pages: response.pages,
-        });
-      } catch (err: any) {
-        setError(err.message || 'Ошибка загрузки товаров');
-        setGoods([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [initialPage, initialSize],
-  );
-
-  useEffect(() => {
-    fetchGoods(initialPage, initialSize);
-  }, []);
-
-  const getGoods = useCallback(async (id: string): Promise<GoodsItem> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const item = await getGoodsById(id);
-      return item;
-    } catch (err: any) {
-      setError(err.message || 'Ошибка получения товара');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const addGoods = useCallback(
-    async (data: Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>): Promise<GoodsItem> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const newItem = await createGoods(data);
-        setGoods((prev) => [newItem, ...prev]);
-        setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
-        return newItem;
-      } catch (err: any) {
-        setError(err.message || 'Ошибка создания товара');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
-  const updateGoodsItem = useCallback(
-    async (id: string, data: Partial<Omit<GoodsItem, 'id' | 'created_at' | 'updated_at'>>): Promise<GoodsItem> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const updated = await updateGoods(id, data);
-        setGoods((prev) => prev.map((item) => (item.id === id ? updated : item)));
-        return updated;
-      } catch (err: any) {
-        setError(err.message || 'Ошибка обновления товара');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
-  const removeGoods = useCallback(
-    async (id: string): Promise<void> => {
-      setLoading(true);
-      setError(null);
-      try {
-        await deleteGoods(id);
-        setGoods((prev) => prev.filter((item) => item.id !== id));
-        setPagination((prev) => ({ ...prev, total: prev.total - 1 }));
-      } catch (err: any) {
-        setError(err.message || 'Ошибка удаления товара');
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
-  // parseByArticle удалён
+export const useGoods = (initialPage?: number, initialSize?: number): UseGoodsReturn => {
+  // Параметры игнорируются – состояние полностью управляется стором
+  const goods = useGoodsStore((state) => state.goods);
+  const loading = useGoodsStore((state) => state.isLoading);
+  const error = useGoodsStore((state) => state.error);
+  const total = useGoodsStore((state) => state.total);
+  const page = useGoodsStore((state) => state.page);
+  const size = useGoodsStore((state) => state.size);
+  const pages = useGoodsStore((state) => state.pages);
+  const fetchGoods = useGoodsStore((state) => state.fetchGoods);
+  const getGoods = useGoodsStore((state) => state.getGoods);
+  const addGoods = useGoodsStore((state) => state.addGoods);
+  const updateGoods = useGoodsStore((state) => state.updateGoods);
+  const removeGoods = useGoodsStore((state) => state.removeGoods);
 
   return {
     goods,
     loading,
     error,
-    total: pagination.total,
-    page: pagination.page,
-    size: pagination.size,
-    pages: pagination.pages,
+    total,
+    page,
+    size,
+    pages,
     fetchGoods,
     getGoods,
     addGoods,
-    updateGoods: updateGoodsItem,
+    updateGoods,
     removeGoods,
-    // parseByArticle, // удалён
   };
 };

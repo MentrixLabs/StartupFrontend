@@ -69,7 +69,7 @@ export const useAuth = (): UseAuthReturn => {
       setLoading(true);
       setError(null);
       try {
-        const userData = await apiRegister({ username, email, password, full_name: fullName });
+        const userData = await apiRegister({ username, email, password});
         setUser(userData);
       } catch (err: any) {
         setError(err.response?.data?.detail || err.message || 'Ошибка регистрации');
