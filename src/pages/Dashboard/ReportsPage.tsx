@@ -8,6 +8,7 @@ import {
   downloadReportPdf,
   deleteReport,
 } from '@/api/reports';
+import { updateStockHistory } from '@/api/goods';
 import type { Report } from '@/api/types';
 import {
   Alert,
@@ -17,6 +18,7 @@ import {
   CardContent,
   ConfirmDialog,
   FormField,
+  Input,
   Select,
   Table,
   TableBody,
@@ -61,6 +63,10 @@ const ReportsPage: React.FC = () => {
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  // --- Состояние для ввода остатков ---
+  const [stockInput, setStockInput] = useState<string>('');
+  const [stockError, setStockError] = useState<string | null>(null);
+
   const loadReports = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -82,24 +88,66 @@ const ReportsPage: React.FC = () => {
     void loadReports();
   }, [loadReports]);
 
+  // --- Парсинг введённых остатков ---
+  const parseStockInput = (input: string): number[] => {
+    if (!input.trim()) return [];
+    // Разделители: запятая, пробел, точка с запятой
+    const parts = input.split(/[,;\s]+/).filter(s => s.length > 0);
+    const numbers = parts.map(Number).filter(n => !isNaN(n) && n >= 0);
+    return numbers;
+  };
+
+  // --- Генерация отчёта с предварительным обновлением остатков ---
   const handleGenerateReport = useCallback(async () => {
     if (!selectedGoodsId) {
       setError('Выберите товар для генерации отчета');
       return;
     }
+
+    // Валидация и парсинг остатков (если поле не пусто)
+    let stockEntries: { record_date: string; fbs_count: number }[] = [];
+    if (stockInput.trim()) {
+      const numbers = parseStockInput(stockInput);
+      if (numbers.length === 0) {
+        setStockError('Введите корректные числа (разделяйте запятыми или пробелами)');
+        return;
+      }
+      setStockError(null);
+
+      const today = new Date();
+      // Сопоставляем числа с датами: последнее число -> сегодня, предпоследнее -> вчера и т.д.
+      const numLen = numbers.length;
+      for (let i = 0; i < numLen; i++) {
+        const daysAgo = numLen - 1 - i;
+        const d = new Date(today);
+        d.setDate(d.getDate() - daysAgo);
+        const dateStr = d.toISOString().split('T')[0];
+        stockEntries.push({ record_date: dateStr, fbs_count: numbers[i] });
+      }
+    }
+
     setGenerating(true);
     setError(null);
     setSuccess(null);
+
     try {
-      const newReport = await generateReport(selectedGoodsId);
+      // 1. Если есть записи остатков – обновляем их
+      if (stockEntries.length > 0) {
+        await updateStockHistory(Number(selectedGoodsId), stockEntries);
+      }
+
+      // 2. Генерируем отчёт
+      const newReport = await generateReport(Number(selectedGoodsId));
       setReports((prev) => [newReport, ...prev]);
       setSuccess('Отчет успешно сгенерирован');
+      // Очищаем поле после успешной генерации (опционально)
+      setStockInput('');
     } catch (err) {
       setError(getErrorMessage(err, 'Ошибка генерации отчета'));
     } finally {
       setGenerating(false);
     }
-  }, [selectedGoodsId]);
+  }, [selectedGoodsId, stockInput]);
 
   const handleDelete = useCallback(async (id: string) => {
     setDeletingId(id);
@@ -107,7 +155,7 @@ const ReportsPage: React.FC = () => {
     setSuccess(null);
     try {
       await deleteReport(id);
-      setReports((prev) => prev.filter((r) => String(r.id) !== id));
+      setReports((prev) => prev.filter((r) => r.id !== id));
       setSuccess('Отчет удален');
     } catch (err) {
       setError(getErrorMessage(err, 'Ошибка удаления отчета'));
@@ -163,7 +211,7 @@ const ReportsPage: React.FC = () => {
       </div>
 
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
             <div className="flex-1">
               <FormField id="filterGoods" label="Фильтр по товару">
@@ -194,6 +242,34 @@ const ReportsPage: React.FC = () => {
               {generating ? 'Генерация...' : 'Создать отчет'}
             </Button>
           </div>
+
+          {/* Поле ввода остатков (показывается только когда выбран товар) */}
+          {selectedGoodsId && (
+            <div className="mt-2">
+              <FormField
+                id="stockInput"
+                label="Введите последние остатки товара на складе (FBS/FBO)"
+                error={stockError}
+                hint="Формат: числа, разделённые запятыми или пробелами. Например: 500, 550, 400 (позавчера, вчера, сегодня). Можно ввести одно число – оно будет отнесено к сегодняшнему дню."
+                required={false}
+              >
+                {(fieldProps) => (
+                  <Input
+                    {...fieldProps}
+                    type="text"
+                    value={stockInput}
+                    onChange={(e) => {
+                      setStockInput(e.target.value);
+                      if (stockError) setStockError(null);
+                    }}
+                    placeholder="500, 550, 400"
+                    className="max-w-md"
+                  />
+                )}
+              </FormField>
+            </div>
+          )}
+
           {goodsLoading && (
             <div
               className="flex items-center gap-2 mt-2 text-sm text-gray-500 dark:text-gray-400"
@@ -298,7 +374,11 @@ const ReportsPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => navigate(`/reports/view/${report.id}`)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigate(`/reports/view/${report.id}`)}
+                        >
                           <Eye size={18} aria-hidden="true" />
                         </Button>
                         <Button

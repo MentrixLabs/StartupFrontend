@@ -85,3 +85,10 @@ export const updateGoods = async (
 export const deleteGoods = async (id: string): Promise<void> => {
   await client.delete(`/goods/${id}`);
 };
+
+export const updateStockHistory = async (
+  goodsId: number,
+  entries: { record_date: string; fbs_count: number }[]
+): Promise<void> => {
+  await client.post(`/goods/${goodsId}/stock-history`, { entries });
+};
