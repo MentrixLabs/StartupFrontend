@@ -1,6 +1,6 @@
 // src/pages/Dashboard/ReportsPage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useGoods } from '@/hooks/useGoods';
 import {
   getReports,
@@ -34,6 +34,7 @@ import {
   CheckCircle,
   Package,
   X,
+  Eye,
 } from 'lucide-react';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
@@ -56,6 +57,8 @@ const ReportsPage: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const isDeleting = deletingId !== null;
 
+  const navigate = useNavigate();
+
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const loadReports = useCallback(async () => {
@@ -65,7 +68,7 @@ const ReportsPage: React.FC = () => {
       const result = await getReports(1, 100);
       let items = result.items;
       if (selectedGoodsId) {
-        items = items.filter((r) => r.goods_id === selectedGoodsId);
+        items = items.filter((r) => String(r.goods_id) === selectedGoodsId);
       }
       setReports(items);
     } catch (err) {
@@ -104,7 +107,7 @@ const ReportsPage: React.FC = () => {
     setSuccess(null);
     try {
       await deleteReport(id);
-      setReports((prev) => prev.filter((r) => r.id !== id));
+      setReports((prev) => prev.filter((r) => String(r.id) !== id));
       setSuccess('Отчет удален');
     } catch (err) {
       setError(getErrorMessage(err, 'Ошибка удаления отчета'));
@@ -260,7 +263,7 @@ const ReportsPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <Package size={16} className="text-gray-400" aria-hidden="true" />
                         <span className="font-medium text-gray-900 dark:text-white">
-                          {getGoodsName(report.goods_id)}
+                          {getGoodsName(String(report.goods_id))}
                         </span>
                       </div>
                     </TableCell>
@@ -295,16 +298,19 @@ const ReportsPage: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => navigate(`/reports/view/${report.id}`)}>
+                          <Eye size={18} aria-hidden="true" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-                          onClick={() => void handleDownload(report.id)}
-                          disabled={downloadingId === report.id}
+                          onClick={() => void handleDownload(String(report.id))}
+                          disabled={downloadingId === String(report.id)}
                           title="Скачать PDF"
                           aria-label="Скачать PDF"
                         >
-                          {downloadingId === report.id ? (
+                          {downloadingId === String(report.id) ? (
                             <Loader2 size={18} className="animate-spin" aria-hidden="true" />
                           ) : (
                             <Download size={18} aria-hidden="true" />
@@ -314,7 +320,7 @@ const ReportsPage: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
-                          onClick={() => setConfirmDelete(report.id)}
+                          onClick={() => setConfirmDelete(String(report.id))}
                           disabled={isDeleting}
                           title="Удалить"
                           aria-label="Удалить"

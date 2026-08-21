@@ -86,12 +86,34 @@ export interface InfographicsSearchResponse {
 
 // Данные отчёта
 export interface Report {
-  id: string;
-  goods_id: string;
+  id: number;
+  goods_id: number;
   created_at: string;
   seo_text?: string;
   infographics?: string[];
-  // другие поля
+  forecast_data?: {
+    days_to_out_of_stock?: string;
+    price_dynamic?: string;
+    recommended_price?: number;
+    key_metrics?: {
+      avg_price?: number;
+      max_price?: number;
+      min_price?: number;
+      volatility?: number;
+    };
+    forecast?: Array<{
+      date: string;
+      price: number;
+      demand: number;
+      stock: number;
+    }>;
+    revenue_forecast?: Array<{
+      date: string;
+      revenue: number;
+    }>;
+    keywords?: string[];
+    recommendations?: string;
+  };
 }
 
 /**

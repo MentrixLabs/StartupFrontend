@@ -18,6 +18,11 @@ export const getReportById = async (id: string): Promise<Report> => {
   return response.data;
 };
 
+export const getReport = async (id: number): Promise<Report> => {
+  const response = await client.get<Report>(`/reports/${id}`);
+  return response.data;
+};
+
 // Сгенерировать новый отчёт для товара (запустить комплексную оптимизацию)
 export const generateReport = async (goodsId: string): Promise<Report> => {
   const response = await client.post<Report>('/reports/generate', { goods_id: goodsId });
