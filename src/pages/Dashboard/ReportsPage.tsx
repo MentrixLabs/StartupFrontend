@@ -137,7 +137,7 @@ const ReportsPage: React.FC = () => {
       }
 
       // 2. Генерируем отчёт
-      const newReport = await generateReport(Number(selectedGoodsId));
+      const newReport = await generateReport(selectedGoodsId);
       setReports((prev) => [newReport, ...prev]);
       setSuccess('Отчет успешно сгенерирован');
       // Очищаем поле после успешной генерации (опционально)
@@ -155,7 +155,7 @@ const ReportsPage: React.FC = () => {
     setSuccess(null);
     try {
       await deleteReport(id);
-      setReports((prev) => prev.filter((r) => r.id !== id));
+      setReports((prev) => prev.filter((r) => String(r.id) !== id));
       setSuccess('Отчет удален');
     } catch (err) {
       setError(getErrorMessage(err, 'Ошибка удаления отчета'));
