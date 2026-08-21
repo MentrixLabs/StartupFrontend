@@ -42,7 +42,6 @@ const GoodsListPage: React.FC = () => {
   } = useGoods();
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(page);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
@@ -62,7 +61,6 @@ const GoodsListPage: React.FC = () => {
   const handlePageChange = useCallback(
     (newPage: number) => {
       if (newPage < 1 || newPage > pages) return;
-      setCurrentPage(newPage);
       fetchGoods(newPage, size);
     },
     [fetchGoods, pages, size]
@@ -77,8 +75,8 @@ const GoodsListPage: React.FC = () => {
         await removeGoods(id);
         setDeleteConfirm(null);
         // Если после удаления на странице нет товаров и это не первая страница, переходим на предыдущую
-        if (goods.length === 1 && currentPage > 1) {
-          handlePageChange(currentPage - 1);
+        if (goods.length === 1 && page > 1) {
+          handlePageChange(page - 1);
         }
       } catch (err) {
         console.error('Ошибка удаления:', err);
@@ -86,7 +84,7 @@ const GoodsListPage: React.FC = () => {
         setIsDeleting(false);
       }
     },
-    [removeGoods, goods.length, currentPage, handlePageChange, isDeleting]
+    [removeGoods, goods.length, page, handlePageChange, isDeleting]
   );
 
   // Форматирование даты
@@ -122,7 +120,7 @@ const GoodsListPage: React.FC = () => {
             variant="outline"
             size="sm"
             className="mt-3"
-            onClick={() => fetchGoods(currentPage, size)}
+            onClick={() => fetchGoods(page, size)}
           >
             Повторить
           </Button>
@@ -271,28 +269,28 @@ const GoodsListPage: React.FC = () => {
         {pages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Страница {currentPage} из {pages}
+              Страница {page} из {pages}
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"
                 className="h-9 w-9"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
+                onClick={() => handlePageChange(page - 1)}
+                disabled={page === 1}
                 aria-label="Предыдущая страница"
               >
                 <ChevronLeft size={18} aria-hidden="true" />
               </Button>
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {currentPage} / {pages}
+                {page} / {pages}
               </span>
               <Button
                 variant="outline"
                 size="icon"
                 className="h-9 w-9"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === pages}
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page === pages}
                 aria-label="Следующая страница"
               >
                 <ChevronRight size={18} aria-hidden="true" />
