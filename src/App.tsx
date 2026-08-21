@@ -84,7 +84,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <BrowserRouter basename="/StartupFrontend">
+    <BrowserRouter basename="">
       <Routes>
         <Route path="/" element={<RootRoute />} />
 
@@ -125,7 +125,7 @@ const App: React.FC = () => {
 
         {/* Страница 404 */}
         <Route
-          path="/StartupFrontend"
+          path=""
           element={
             <div className="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
               <h1 className="text-6xl font-bold text-gray-800 dark:text-white">404</h1>

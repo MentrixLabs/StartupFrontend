@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useGoods } from '@/hooks/useGoods';
 import type { GoodsItem } from '@/api/types';
 import { Alert, Button, Card, CardContent, StatTile } from '@/components/ui';
-import { Package, FileText, Image, BarChart3, Target, CheckCircle, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Package, FileText, Image, BarChart3, Target, CheckCircle, Loader2 } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -30,36 +30,12 @@ import {
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981'];
 
-// ---- Вспомогательная функция для генерации мок-данных ----
-const generateMockData = (
-  seoGoalMet: boolean,
-  infographicsGoalMet: boolean
-): { weeklyActivity: WeeklyActivityItem[]; contentDist: ContentDistribution } => {
-  const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const baseSEO = seoGoalMet ? 5 : 2;
-  const baseCTR = infographicsGoalMet ? 4 : 1.5;
-  const trend = seoGoalMet && infographicsGoalMet ? 1.2 : 0.8; // более крутой рост
-
-  const weeklyActivity = days.map((day, i) => ({
-    day,
-    seo: Math.round((baseSEO + i * 0.7 * trend) * 10) / 10,
-    infographics: Math.round((baseCTR + i * 0.4 * trend) * 10) / 10,
-  }));
-
-  const contentDist = {
-    seo: seoGoalMet ? 45 + Math.floor(Math.random() * 20) : 10 + Math.floor(Math.random() * 15),
-    infographics: infographicsGoalMet ? 30 + Math.floor(Math.random() * 15) : 8 + Math.floor(Math.random() * 10),
-    reports: Math.floor(Math.random() * 10) + 5,
-  };
-
-  return { weeklyActivity, contentDist };
-};
-
-// ---- Основной компонент ----
 const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { goods, loading: goodsLoading, fetchGoods } = useGoods();
+  // ВРЕМЕННО: заглушка вместо useGoods
+const { goods, loading: goodsLoading, fetchGoods } = useGoods();
 
+  // Состояния для данных
   const [weeklyActivity, setWeeklyActivity] = useState<WeeklyActivityItem[]>([]);
   const [contentDist, setContentDist] = useState<ContentDistribution>({ seo: 0, infographics: 0, reports: 0 });
   const [recommendation, setRecommendation] = useState<Recommendation>({ target_seo: 0, target_infographics: 0 });
@@ -67,34 +43,21 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [recentGoods, setRecentGoods] = useState<GoodsItem[]>([]);
 
-  // Загрузка данных
+  // Загрузка всех данных
   useEffect(() => {
+    
     const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
+        // Загружаем товары (для последних добавленных)
         await fetchGoods(1, 10);
-
-        // Пробуем получить реальные данные
-        let [activity, distribution, rec] = await Promise.all([
-          getWeeklyActivity().catch(() => []),
-          getContentDistribution().catch(() => ({ seo: 0, infographics: 0, reports: 0 })),
-          getRecommendation().catch(() => ({ target_seo: 0, target_infographics: 0 })),
+        // Загружаем статистику
+        const [activity, distribution, rec] = await Promise.all([
+          getWeeklyActivity(),
+          getContentDistribution(),
+          getRecommendation(),
         ]);
-
-        // Если реальные данные пусты (или все нули) – генерируем моки
-        const isDataEmpty = distribution.seo === 0 && distribution.infographics === 0;
-        if (isDataEmpty || activity.length === 0) {
-          const seoGoalMet = rec.target_seo > 0 && distribution.seo >= rec.target_seo;
-          const infographicsGoalMet = rec.target_infographics > 0 && distribution.infographics >= rec.target_infographics;
-          const mock = generateMockData(seoGoalMet, infographicsGoalMet);
-          activity = mock.weeklyActivity;
-          distribution = mock.contentDist;
-          // Подгоняем рекомендации, чтобы они не были нулевыми
-          if (rec.target_seo === 0) rec.target_seo = 5;
-          if (rec.target_infographics === 0) rec.target_infographics = 3;
-        }
-
         setWeeklyActivity(activity);
         setContentDist(distribution);
         setRecommendation(rec);
@@ -117,6 +80,7 @@ const DashboardPage: React.FC = () => {
     }
   }, [goods]);
 
+  // Форматирование даты
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
@@ -129,13 +93,12 @@ const DashboardPage: React.FC = () => {
     { name: 'Отчёты', value: contentDist.reports },
   ].filter(item => item.value > 0);
 
-  // Метрики (добавлены лиды и CTR)
+  // Метрики для StatTile
   const metricCards = [
     { label: 'Всего товаров', value: goods.length, icon: Package },
     { label: 'SEO-генераций', value: contentDist.seo, icon: FileText },
     { label: 'Инфографика', value: contentDist.infographics, icon: Image },
-    { label: 'Лиды (сегодня)', value: weeklyActivity[weeklyActivity.length - 1]?.seo || 0, icon: TrendingUp },
-    { label: 'CTR (средний)', value: `${(weeklyActivity.reduce((acc, d) => acc + d.infographics, 0) / (weeklyActivity.length || 1)).toFixed(1)}%`, icon: BarChart3 },
+    { label: 'Отчёты', value: contentDist.reports, icon: BarChart3 },
   ];
 
   if (loading || goodsLoading) {
@@ -169,10 +132,11 @@ const DashboardPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Ошибка */}
       {error && <Alert variant="error">{error}</Alert>}
 
       {/* Карточки метрик */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metricCards.map(({ label, value, icon: Icon }) => (
           <StatTile key={label} label={label} value={value} icon={<Icon size={22} />} />
         ))}
@@ -180,19 +144,19 @@ const DashboardPage: React.FC = () => {
 
       {/* Графики */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Активность за неделю (лиды и CTR) */}
+        {/* Активность за неделю */}
         <Card className="lg:col-span-2">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Динамика лидов и CTR</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Активность за неделю</h2>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
                   <span className="w-3 h-3 bg-blue-500 rounded-full" />
-                  <span className="text-gray-600 dark:text-gray-400">Лиды</span>
+                  <span className="text-gray-600 dark:text-gray-400">SEO</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-3 h-3 bg-purple-500 rounded-full" />
-                  <span className="text-gray-600 dark:text-gray-400">CTR (%)</span>
+                  <span className="text-gray-600 dark:text-gray-400">Инфографика</span>
                 </div>
               </div>
             </div>
@@ -205,7 +169,7 @@ const DashboardPage: React.FC = () => {
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'rgba(255,255,255,0.9)',
-                      borderRadius: '8px',
+                      borderRadius: '20%',
                       border: 'none',
                       boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                     }}
@@ -241,7 +205,7 @@ const DashboardPage: React.FC = () => {
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'rgba(255,255,255,0.9)',
-                      borderRadius: '8px',
+                      borderRadius: '20%',
                       border: 'none',
                       boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                     }}
@@ -289,7 +253,7 @@ const DashboardPage: React.FC = () => {
               {/* Инфографика цель */}
               <div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Инфографика (изображения)</span>
+                  <span className="text-gray-600 dark:text-gray-400">Инфографика</span>
                   <span className="font-medium">
                     {contentDist.infographics} / {recommendation.target_infographics}
                   </span>
